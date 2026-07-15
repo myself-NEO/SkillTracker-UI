@@ -1,0 +1,6 @@
+{
+  "name": "SDE 2 Interview Prep Tracker",
+  "description": "Comprehensive tracking for SDE 2 interview preparation, featuring technical module dashboards, ideal and personalized roadmaps, mock interview scheduling, and secure credentials authentication.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

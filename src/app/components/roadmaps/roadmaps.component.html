@@ -1,0 +1,311 @@
+<div class="space-y-8 pb-16 animate-fade-in">
+  
+  <!-- Tab Selectors -->
+  <div class="flex border-b border-white/10">
+    <button
+      (click)="activeTab = 'ideal'"
+      class="pb-4 px-6 font-bold text-sm flex items-center gap-2 border-b-2 transition-all duration-200 cursor-pointer"
+      [class.border-indigo-400]="activeTab === 'ideal'"
+      [class.text-indigo-300]="activeTab === 'ideal'"
+      [class.border-transparent]="activeTab !== 'ideal'"
+      [class.text-slate-400]="activeTab !== 'ideal'"
+      [class.hover:text-slate-200]="activeTab !== 'ideal'"
+    >
+      <svg lucideCompass class="w-4 h-4"></svg> Ideal Static Roadmap
+    </button>
+    <button
+      (click)="activeTab = 'personalised'"
+      class="pb-4 px-6 font-bold text-sm flex items-center gap-2 border-b-2 transition-all duration-200 cursor-pointer"
+      [class.border-indigo-400]="activeTab === 'personalised'"
+      [class.text-indigo-300]="activeTab === 'personalised'"
+      [class.border-transparent]="activeTab !== 'personalised'"
+      [class.text-slate-400]="activeTab !== 'personalised'"
+      [class.hover:text-slate-200]="activeTab !== 'personalised'"
+    >
+      <svg lucideMap class="w-4 h-4"></svg> Personalised Target Roadmap
+    </button>
+  </div>
+
+  @if (activeTab === 'ideal') {
+    <!-- ----------------- STATIC IDEAL ROADMAP VIEW ----------------- -->
+    <div class="space-y-6 max-w-4xl">
+      <div>
+        <h3 class="text-white font-bold text-lg flex items-center gap-2">
+          <svg lucideCompass class="text-indigo-400 w-5 h-5"></svg> Ideal SDE 2 Preparation Path
+        </h3>
+        <p class="text-slate-300 text-xs mt-1">
+          A comprehensive, time-tested 10-week syllabus followed by elite candidates entering senior software roles.
+        </p>
+      </div>
+
+      <div class="relative border-l border-white/10 pl-6 ml-4 space-y-8">
+        @for (item of staticRoadmap; track $index) {
+          <div class="relative">
+            <!-- Timeline node icon -->
+            <div class="absolute -left-[31px] top-1.5 w-4.5 h-4.5 bg-indigo-950 border-2 border-indigo-400 rounded-full flex items-center justify-center shadow-[0_0_8px_rgba(129,140,248,0.5)]">
+              <div class="w-1.5 h-1.5 bg-indigo-400 rounded-full"></div>
+            </div>
+
+            <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 space-y-4 shadow-md hover:border-white/20 transition-all duration-300">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+                <div>
+                  <span class="text-xs text-indigo-300 font-bold uppercase tracking-wider">{{item.week}}</span>
+                  <h4 class="text-white font-bold text-sm mt-0.5">{{item.title}}</h4>
+                </div>
+                <span class="text-[10px] bg-white/5 px-2.5 py-1 rounded-xl text-slate-300 border border-white/10 uppercase font-bold self-start text-xs">
+                  Syllabus Phase {{$index + 1}}
+                </span>
+              </div>
+
+              <p class="text-slate-300 text-xs leading-relaxed">{{item.description}}</p>
+
+              <div>
+                <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2">Core Areas & Deliverables</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  @for (topic of item.topics; track topic) {
+                    <div class="bg-white/5 p-2.5 border border-white/5 rounded-2xl flex items-center gap-2 backdrop-blur-sm">
+                      <svg lucideChevronRight class="w-3.5 h-3.5 text-indigo-300 shrink-0"></svg>
+                      <span class="text-slate-200 text-xs font-medium">{{topic}}</span>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  } @else {
+    <!-- ----------------- PERSONALISED ROADMAP VIEW ----------------- -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      
+      <!-- Milestone List & Manual Addition (Left 2 columns) -->
+      <div class="lg:col-span-2 space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-white font-bold text-lg flex items-center gap-2">
+              <svg lucideTarget class="text-indigo-400 w-5 h-5"></svg> Your Personalized Prep Milestones
+            </h3>
+            <span class="text-xs text-slate-400 block mt-0.5">Customize, reorder, or fulfill your tailored targets</span>
+          </div>
+          <button
+            (click)="showAddForm = !showAddForm"
+            class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
+          >
+            <svg lucidePlus class="w-4 h-4"></svg> Manual Target
+          </button>
+        </div>
+
+        <!-- Manual Add Form -->
+        @if (showAddForm) {
+          <form
+            (submit)="handleManualAddMilestone($event)"
+            class="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 space-y-4 overflow-hidden animate-fade-in"
+          >
+            <h4 class="text-white font-bold text-xs uppercase tracking-wider">Add Custom Prep Goal</h4>
+            
+            <div>
+              <label class="block text-slate-300 text-[10px] uppercase font-bold mb-1">Target Milestone Title</label>
+              <input 
+                type="text" 
+                required
+                name="newTitle"
+                placeholder="e.g. Solve 20 sliding window hard questions"
+                [(ngModel)]="newTitle"
+                class="w-full bg-black/25 border border-white/10 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
+              />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-300 text-[10px] uppercase font-bold mb-1">Study Details</label>
+                <input 
+                  type="text" 
+                  name="newDesc"
+                  placeholder="e.g. Master double index structures"
+                  [(ngModel)]="newDesc"
+                  class="w-full bg-black/25 border border-white/10 rounded-xl p-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400"
+                />
+              </div>
+              <div>
+                <label class="block text-slate-300 text-[10px] uppercase font-bold mb-1">Target Date</label>
+                <input 
+                  type="date" 
+                  name="newTargetDate"
+                  [(ngModel)]="newTargetDate"
+                  class="w-full bg-black/25 border border-white/10 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-indigo-400"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              [disabled]="addingMilestone"
+              class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2.5 rounded-xl transition-all shadow-md cursor-pointer"
+            >
+              {{ addingMilestone ? "Saving..." : "Add Roadmap Target" }}
+            </button>
+          </form>
+        }
+
+        <!-- Milestones Timeline -->
+        <div class="space-y-4">
+          @for (item of personalizedRoadmap; track item.id) {
+            <div 
+              class="bg-white/5 backdrop-blur-md border p-5 flex items-start gap-4 transition-all duration-300 rounded-2xl"
+              [class.border-white-5]="item.completed"
+              [class.bg-white-2]="item.completed"
+              [class.opacity-60]="item.completed"
+              [class.shadow-none]="item.completed"
+              [class.border-white-10]="!item.completed"
+              [class.hover:border-white-20]="!item.completed"
+              [class.hover:bg-white-10]="!item.completed"
+              [class.shadow-sm]="!item.completed"
+            >
+              <!-- Status Checkbox -->
+              <button 
+                (click)="handleToggleMilestone(item)"
+                class="mt-1 text-slate-400 hover:text-indigo-300 focus:outline-none shrink-0 cursor-pointer"
+              >
+                @if (item.completed) {
+                  <svg name="check" class="w-5 h-5 text-emerald-400 drop-shadow-[0_0_6px_rgba(52,211,153,0.3)]"></svg>
+                } @else {
+                  <svg name="circle" class="w-5 h-5 text-slate-500 hover:text-indigo-400 transition-colors"></svg>
+                }
+              </button>
+
+              <div class="flex-1 space-y-1">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <h4 
+                    class="text-sm font-bold"
+                    [class.text-slate-500]="item.completed"
+                    [class.line-through]="item.completed"
+                    [class.text-white]="!item.completed"
+                  >
+                    {{item.title}}
+                  </h4>
+                  @if (item.targetDate) {
+                    <div class="flex items-center gap-1 text-[10px] bg-white/5 border border-white/10 px-2.5 py-0.5 rounded-lg text-slate-300 uppercase font-bold shrink-0 self-start text-xs">
+                      <svg name="calendar" class="w-3.5 h-3.5 text-indigo-300"></svg>
+                      <span>By {{item.targetDate}}</span>
+                    </div>
+                  }
+                </div>
+                @if (item.description) {
+                  <p 
+                    class="text-xs leading-relaxed"
+                    [class.text-slate-500]="item.completed"
+                    [class.text-slate-300]="!item.completed"
+                  >
+                    {{item.description}}
+                  </p>
+                }
+              </div>
+
+              <button
+                (click)="handleDeleteMilestone(item.id)"
+                class="text-slate-400 hover:text-rose-400 p-1 rounded-md transition-colors shrink-0 cursor-pointer"
+                title="Delete milestone"
+              >
+                <svg name="trash-2" class="w-4 h-4"></svg>
+              </button>
+            </div>
+          }
+
+          @if (personalizedRoadmap.length === 0) {
+            <p class="text-slate-400 text-xs italic text-center py-12 bg-white/5 border border-white/10 border-dashed rounded-3xl backdrop-blur-sm shadow-sm">
+              No personalized milestones added yet. Use the manual form or generate a smart target path using the AI Personalizer panel on the right!
+            </p>
+          }
+        </div>
+      </div>
+
+      <!-- AI Personalizer Sidebar (Right 1 column) -->
+      <div class="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 h-fit space-y-6 shadow-xl relative overflow-hidden">
+        <div class="space-y-1">
+          <h3 class="text-white text-md font-bold flex items-center gap-2">
+            <svg name="sparkles" class="text-indigo-300 w-5 h-5 fill-indigo-500/20"></svg> Gemini Prep Personalizer
+          </h3>
+          <p class="text-slate-300 text-xs leading-relaxed">
+            Utilize Gemini server-side intelligence to generate week-by-week study targets customized around your target company and weak areas.
+          </p>
+        </div>
+
+        @if (aiError) {
+          <div class="p-3 bg-rose-950/40 border border-rose-800/50 rounded-xl flex items-start gap-2 text-rose-200 text-xs animate-shake">
+            <svg name="shield" class="w-4 h-4 shrink-0 text-rose-400 mt-0.5"></svg>
+            <span>{{aiError}}</span>
+          </div>
+        }
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-slate-300 text-[10px] uppercase font-bold tracking-wider mb-1.5">Target Tech Company</label>
+            <input 
+              type="text" 
+              name="targetCompany"
+              [(ngModel)]="targetCompany"
+              placeholder="e.g. Google, Amazon, Meta"
+              class="w-full bg-black/25 border border-white/10 text-xs rounded-xl p-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
+            />
+          </div>
+
+          <div>
+            <label class="block text-slate-300 text-[10px] uppercase font-bold tracking-wider mb-1.5">Timeline (Weeks)</label>
+            <input 
+              type="number" 
+              name="timelineWeeks"
+              [(ngModel)]="timelineWeeks"
+              placeholder="e.g. 6, 8, 12"
+              class="w-full bg-black/25 border border-white/10 text-xs rounded-xl p-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
+            />
+          </div>
+
+          <div>
+            <label class="block text-slate-300 text-[10px] uppercase font-bold tracking-wider mb-1.5">Current Experience Level</label>
+            <input 
+              type="text" 
+              name="currentLevel"
+              [(ngModel)]="currentLevel"
+              placeholder="e.g. SDE 1, L3, Junior Dev"
+              class="w-full bg-black/25 border border-white/10 text-xs rounded-xl p-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400"
+            />
+          </div>
+
+          <div>
+            <label class="block text-slate-300 text-[10px] uppercase font-bold tracking-wider mb-1.5">Your Focus Weak Areas</label>
+            <textarea 
+              rows="3"
+              name="weakAreas"
+              [(ngModel)]="weakAreas"
+              placeholder="e.g. DB sharding, locking paradigms, multi-threading"
+              class="w-full bg-black/25 border border-white/10 text-xs rounded-xl p-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-400"
+            ></textarea>
+          </div>
+
+          <button
+            type="button"
+            (click)="handleAIPersonalize()"
+            [disabled]="generatingAI"
+            class="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-600/20 cursor-pointer"
+          >
+            @if (generatingAI) {
+              <div class="flex items-center gap-2">
+                <svg class="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Generating custom targets...</span>
+              </div>
+            } @else {
+              <svg name="sparkles" class="w-4 h-4 fill-white/10"></svg>
+              <span>Generate AI Personalized Roadmap</span>
+            }
+          </button>
+        </div>
+      </div>
+
+    </div>
+  }
+
+</div>

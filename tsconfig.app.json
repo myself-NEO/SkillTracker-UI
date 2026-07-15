@@ -1,0 +1,22 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/app",
+    "types": ["node"],
+    "noEmit": false,
+    "allowImportingTsExtensions": false
+  },
+  "files": [
+    "src/main.ts"
+  ],
+  "include": [
+    "src/**/*.d.ts",
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "src/components/**/*.tsx",
+    "src/App.tsx",
+    "src/main.tsx",
+    "server.ts"
+  ]
+}

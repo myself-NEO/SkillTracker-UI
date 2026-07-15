@@ -1,0 +1,71 @@
+<nav class="bg-white/5 backdrop-blur-xl border-b border-white/10 text-white font-sans sticky top-0 z-30 shadow-lg">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between h-16">
+      
+      <!-- Left: Brand/Logo and navigation -->
+      <div class="flex items-center gap-8">
+        <div class="flex items-center gap-2.5 cursor-pointer" routerLink="/dashboard">
+          <div class="p-1.5 bg-indigo-500/20 border border-indigo-500/30 rounded-lg text-indigo-300 shadow-md">
+            <svg lucideKeyRound class="w-5 h-5"></svg>
+          </div>
+          <span class="font-bold text-sm tracking-tight text-white sm:block">SDE 2 Prep</span>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex gap-1.5">
+          <a
+            routerLink="/dashboard"
+            routerLinkActive="bg-white/15 text-indigo-300 border border-white/10 shadow-sm"
+            [routerLinkActiveOptions]="{ exact: true }"
+            class="px-4 py-2 rounded-xl font-bold text-xs transition-all duration-200 text-slate-400 hover:bg-white/5 hover:text-white border border-transparent"
+          >
+            Dashboard
+          </a>
+          <a
+            routerLink="/roadmaps"
+            routerLinkActive="bg-white/15 text-indigo-300 border border-white/10 shadow-sm"
+            class="px-4 py-2 rounded-xl font-bold text-xs transition-all duration-200 text-slate-400 hover:bg-white/5 hover:text-white border border-transparent"
+          >
+            Roadmaps
+          </a>
+        </div>
+      </div>
+
+      <!-- Right: User profile summary and Signout -->
+      <div class="flex items-center gap-4">
+        
+        <!-- User Profile Badge -->
+        @if (authService.currentUser(); as user) {
+          <div class="flex items-center gap-2.5 bg-white/5 backdrop-blur-md px-3 py-1.5 border border-white/10 rounded-xl">
+            <div class="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-[10px] font-bold text-white uppercase shadow-inner">
+              @if (user.fullName) {
+                {{user.fullName[0]}}
+              } @else {
+                <svg lucideUser class="w-3.5 h-3.5"></svg>
+              }
+            </div>
+            <div class="hidden sm:block text-left">
+              <span class="block text-[11px] font-bold text-white max-w-[120px] truncate leading-tight">
+                {{user.fullName}}
+              </span>
+              <span class="block text-[9px] text-indigo-300/80 leading-tight font-medium">
+                SDE 2 Candidate
+              </span>
+            </div>
+          </div>
+        }
+
+        <!-- Signout Button -->
+        <button
+          (click)="onLogout()"
+          class="p-2 text-slate-400 hover:text-rose-300 bg-white/5 hover:bg-rose-500/15 border border-white/10 hover:border-rose-500/30 rounded-xl transition-all duration-200 cursor-pointer"
+          title="Sign Out"
+        >
+          <svg lucideLogOut class="w-4 h-4"></svg>
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+</nav>
