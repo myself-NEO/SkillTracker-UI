@@ -7,7 +7,7 @@ import { User, TechnicalModule, MockInterview, Milestone, StaticRoadmapItem } fr
  * TOGGLE MOCK BACKEND
  * Set this to false when you connect your Spring Boot Backend!
  */
-export const USE_MOCK_BACKEND = true;
+export const USE_MOCK_BACKEND = false;
 
 const USERS_KEY = 'sde_prep_users';
 const CURRENT_USER_KEY = 'sde_prep_current_user';

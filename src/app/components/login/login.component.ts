@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { API_BASE_URL } from '../../config/api-base-url';
 import { LucideLock, LucideShield, LucideUser, LucideSparkles, LucideUserCheck } from '@lucide/angular';
 import { CommonModule } from '@angular/common';
 
@@ -23,13 +24,16 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   private messageListener!: (e: MessageEvent) => void;
 
+  // The Google callback page is served by the backend itself (see AuthController#googleCallback),
+  // so the popup's postMessage originates from the API's origin, not this app's.
+  private readonly backendOrigin = new URL(API_BASE_URL, window.location.origin).origin;
+
   constructor(private authService: AuthService, private router: Router) {}
 
   ngOnInit(): void {
     // Setup message listener for Google OAuth login success inside popup window
     this.messageListener = async (e: MessageEvent) => {
-      const origin = e.origin;
-      if (!origin.endsWith('.run.app') && !origin.includes('localhost') && origin !== window.location.origin) {
+      if (e.origin !== this.backendOrigin && e.origin !== window.location.origin) {
         return;
       }
 
