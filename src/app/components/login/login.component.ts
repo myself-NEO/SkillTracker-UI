@@ -39,6 +39,9 @@ export class LoginComponent implements OnInit, OnDestroy {
 
       if (e.data?.type === 'OAUTH_AUTH_SUCCESS') {
         try {
+          if (e.data.token) {
+            this.authService.setToken(e.data.token);
+          }
           const user = await this.authService.checkSession();
           if (user) {
             this.router.navigate(['/dashboard']);
