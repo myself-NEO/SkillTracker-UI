@@ -5,6 +5,7 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { routes } from './app.routes';
 import { authInterceptor } from './interceptors/auth.interceptor';
 import { mockApiInterceptor } from './interceptors/mock-api.interceptor';
+import { apiBaseUrlInterceptor } from './interceptors/api-base-url.interceptor';
 import { provideLucideIcons,
   LucideBookOpen,
   LucideCheck,
@@ -40,7 +41,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withComponentInputBinding()),
-    provideHttpClient(withFetch(), withInterceptors([authInterceptor, mockApiInterceptor])),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor, mockApiInterceptor, apiBaseUrlInterceptor])),
     provideAnimations(),
     
     // Modern provider registration for Lucide icons
