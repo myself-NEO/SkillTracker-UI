@@ -3,6 +3,7 @@ export interface User {
   email: string;
   fullName: string;
   createdAt: string;
+  picture?: string;
 }
 
 export type TopicStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
