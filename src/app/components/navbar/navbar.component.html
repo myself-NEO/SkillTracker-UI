@@ -37,13 +37,17 @@
         <!-- User Profile Badge -->
         @if (authService.currentUser(); as user) {
           <div class="flex items-center gap-2.5 bg-white/5 backdrop-blur-md px-3 py-1.5 border border-white/10 rounded-xl">
-            <div class="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-[10px] font-bold text-white uppercase shadow-inner">
-              @if (user.fullName) {
-                {{user.fullName[0]}}
-              } @else {
-                <svg lucideUser class="w-3.5 h-3.5"></svg>
-              }
-            </div>
+            @if (user.picture) {
+              <img [src]="user.picture" [alt]="user.fullName" class="w-6 h-6 rounded-full object-cover shadow-inner" referrerpolicy="no-referrer" />
+            } @else {
+              <div class="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center text-[10px] font-bold text-white uppercase shadow-inner">
+                @if (user.fullName) {
+                  {{user.fullName[0]}}
+                } @else {
+                  <svg lucideUser class="w-3.5 h-3.5"></svg>
+                }
+              </div>
+            }
             <div class="hidden sm:block text-left">
               <span class="block text-[11px] font-bold text-white max-w-[120px] truncate leading-tight">
                 {{user.fullName}}
