@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
 import { RouterModule, Router } from '@angular/router';
-import { LucideUser, LucideLogOut, LucideKeyRound } from '@lucide/angular';
+import { LucideUser, LucideLogOut } from '@lucide/angular';
 import { AuthService } from '../../services/auth.service';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterModule, LucideKeyRound, LucideLogOut, LucideUser],
+  imports: [CommonModule, RouterModule, LucideLogOut, LucideUser],
   templateUrl: './navbar.component.html',
   styleUrls: ['./navbar.component.scss']
 })
