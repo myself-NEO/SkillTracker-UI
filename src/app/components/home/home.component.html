@@ -1,0 +1,55 @@
+<div class="home-container">
+  <div class="text-center mb-6">
+    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+      Warm up with a quick game 🐍
+    </h1>
+    <p class="text-slate-400 text-sm mt-1">
+      Arrow keys or WASD to move, Space to pause. Swipe on touch screens.
+    </p>
+  </div>
+
+  <div class="game-card">
+    <div class="flex items-center justify-between mb-4 text-xs font-semibold uppercase tracking-wider">
+      <span class="text-slate-300">Score <span class="text-white text-base ml-1">{{ score }}</span></span>
+      <span class="text-slate-400">Best <span class="text-indigo-300 text-base ml-1">{{ highScore }}</span></span>
+    </div>
+
+    <div class="board-wrapper"
+         (touchstart)="onTouchStart($event)"
+         (touchend)="onTouchEnd($event)">
+      <canvas #board
+              [width]="boardPx"
+              [height]="boardPx"
+              class="board"
+              aria-label="Snake game board"></canvas>
+
+      @if (state !== 'running') {
+        <div class="board-overlay">
+          @switch (state) {
+            @case ('idle') {
+              <p class="text-white font-bold text-lg">Snake</p>
+            }
+            @case ('paused') {
+              <p class="text-white font-bold text-lg">Paused</p>
+            }
+            @case ('over') {
+              <p class="text-white font-bold text-lg">Game over</p>
+              <p class="text-slate-300 text-sm mt-1">You scored {{ score }}</p>
+            }
+          }
+          <button type="button"
+                  (click)="togglePlay()"
+                  class="mt-4 bg-white/10 hover:bg-white/15 active:bg-white/20 text-white font-semibold py-2 px-5 rounded-xl border border-white/10 text-sm transition-all cursor-pointer">
+            {{ state === 'paused' ? 'Resume' : state === 'over' ? 'Play again' : 'Start game' }}
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+  <button type="button"
+          routerLink="/login"
+          class="mt-8 w-full max-w-[440px] bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all duration-200 text-sm shadow-lg shadow-indigo-600/20 cursor-pointer">
+    Log in to hone your skills
+  </button>
+</div>
