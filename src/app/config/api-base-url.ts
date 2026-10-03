@@ -1,13 +1,12 @@
-const LOCAL_HOSTNAMES = ['localhost', '127.0.0.1'];
+import { environment } from '../../environments/environment';
 
 /**
  * The Spring Boot backend isn't served from the same origin as this app (it's
- * a standalone Render deployment with no reverse proxy in front), so plain
- * relative `/api/...` calls only work when both happen to share an origin.
- * Everywhere else - local `ng serve`, a separately hosted frontend - we need
- * the backend's absolute origin, and its CORS `FRONTEND_URL` must allow
- * whatever origin this app is actually served from.
+ * a standalone Render deployment with no reverse proxy in front), so every
+ * `/api/...` call needs the backend's absolute origin, and its CORS
+ * `FRONTEND_URL` must allow whatever origin this app is actually served from.
+ *
+ * Which backend is used is picked at build time by the Angular configuration:
+ * `npm run dev` -> local backend, `npm run dev:live` / production build -> live backend.
  */
-export const API_BASE_URL = LOCAL_HOSTNAMES.includes(window.location.hostname)
-  ? 'http://localhost:8080'
-  : 'https://skilltracker-srcv.onrender.com';
+export const API_BASE_URL = environment.apiBaseUrl;

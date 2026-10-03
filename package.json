@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "ng serve --host 0.0.0.0 --port 3000",
+    "dev": "ng serve --host 0.0.0.0 --port 3000 --configuration development",
+    "dev:live": "ng serve --host 0.0.0.0 --port 3000 --configuration live",
     "build": "ng build --configuration production",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
