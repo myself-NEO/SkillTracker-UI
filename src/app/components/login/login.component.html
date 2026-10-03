@@ -1,18 +1,14 @@
 <div class="login-container">
-  <!-- Ambient background elements -->
-  <div class="blur-circle-1"></div>
-  <div class="blur-circle-2"></div>
-
   <div class="glass-card">
     <div class="text-center mb-8">
       <div class="inline-flex items-center justify-center p-3 bg-indigo-500/20 border border-indigo-500/30 rounded-2xl mb-4 text-indigo-300 shadow-lg">
-        <svg lucideLock class="w-8 h-8"></svg>
+        <img src="assets/logo.svg" class="w-8 h-8" alt="Logo">
       </div>
       <h1 class="text-2xl font-bold tracking-tight text-white">
-        SDE 2 Prep Workspace
+        NeoLevelUp
       </h1>
       <p class="text-slate-400 text-sm mt-1">
-        Accelerate your senior engineering prep journey
+        Accelerate your engineering prep journey
       </p>
     </div>
 
@@ -128,7 +124,7 @@
 
     <!-- Register Switch Link -->
     <p class="text-center text-slate-400 text-xs mt-6">
-      {{ isRegister ? "Already tracking your prep?" : "New to the SDE 2 path?" }}
+      {{ isRegister ? "Already tracking your prep?" : "New to the community?" }}
       <button
         type="button"
         (click)="toggleView()"
