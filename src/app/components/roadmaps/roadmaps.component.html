@@ -52,12 +52,25 @@
                   <span class="text-xs text-indigo-300 font-bold uppercase tracking-wider">{{item.week}}</span>
                   <h4 class="text-white font-bold text-sm mt-0.5">{{item.title}}</h4>
                 </div>
-                <span class="text-[10px] bg-white/5 px-2.5 py-1 rounded-xl text-slate-300 border border-white/10 uppercase font-bold self-start text-xs">
-                  Syllabus Phase {{$index + 1}}
-                </span>
+                <div class="flex items-center gap-2 self-start">
+                  <span class="text-[10px] bg-indigo-500/15 px-2.5 py-1 rounded-xl text-indigo-200 border border-indigo-400/30 uppercase font-bold">
+                    {{item.type}}
+                  </span>
+                  <span class="text-[10px] bg-white/5 px-2.5 py-1 rounded-xl text-slate-300 border border-white/10 uppercase font-bold text-xs">
+                    Syllabus Phase {{$index + 1}}
+                  </span>
+                </div>
               </div>
 
               <p class="text-slate-300 text-xs leading-relaxed">{{item.description}}</p>
+
+              @if (item.url) {
+                <a [href]="item.url" target="_blank" rel="noopener noreferrer"
+                   class="inline-flex items-center gap-1 text-indigo-300 hover:text-indigo-200 text-xs font-semibold underline">
+                  Open resource
+                  <svg lucideChevronRight class="w-3.5 h-3.5"></svg>
+                </a>
+              }
 
               <div>
                 <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2">Core Areas & Deliverables</span>
@@ -70,6 +83,20 @@
                   }
                 </div>
               </div>
+
+              @if (item.practice?.length) {
+                <div>
+                  <span class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-2">Practice</span>
+                  <ul class="space-y-1.5">
+                    @for (task of item.practice; track task) {
+                      <li class="flex items-start gap-2 text-slate-200 text-xs">
+                        <svg lucideCheck class="w-3.5 h-3.5 text-emerald-300 shrink-0 mt-0.5"></svg>
+                        <span>{{task}}</span>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
             </div>
           </div>
         }

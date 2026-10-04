@@ -15,30 +15,35 @@ const CURRENT_USER_KEY = 'sde_prep_current_user';
 // Static Ideal SDE 2 Roadmap (10 Weeks)
 const staticRoadmap: StaticRoadmapItem[] = [
   {
+    type: 'DSA',
     week: "Weeks 1-2",
     title: "Advanced Coding & SDE 2 DSA Patterns",
     description: "Build exceptional proficiency in high-frequency DSA structures required for senior evaluations.",
     topics: ["Topological Sorting & Dijkstra", "Dynamic Programming (Interval & Matrix)", "Tries & Advanced Trees", "Sliding Window Optimization"]
   },
   {
+    type: 'LLD',
     week: "Weeks 3-4",
     title: "Low-Level Design (LLD) & Concurrency",
     description: "Learn to model clean, thread-safe, and highly extensible components that adhere strictly to SOLID guidelines.",
     topics: ["SOLID Refactoring", "Creational, Structural & Behavioral Patterns", "Custom Thread Pools & Task Schedulers", "Blocking Queues & Read-Write Locks"]
   },
   {
+    type: 'HLD',
     week: "Weeks 5-7",
     title: "High-Level Distributed System Design (HLD)",
     description: "Design production-grade backends that handle millions of requests while ensuring liveness and high durability.",
     topics: ["Consistent Hashing Rings", "Rate Limiters & API Gateways", "Distributed Caching (LRU, TTL)", "Kafka Event Streams & Pub-Sub Broker Design"]
   },
   {
+    type: 'HLD',
     week: "Weeks 8-9",
     title: "Database Internals & Advanced Storage Systems",
     description: "Understand write paths, index layouts, transaction guarantees, and sharding layouts.",
     topics: ["B-Trees vs LSM Trees (Read/Write Amplification)", "Optimistic vs Pessimistic Locking", "Distributed Transactions (Two-Phase Commit)", "Sharding & Multi-Region Replication"]
   },
   {
+    type: 'Behaviour',
     week: "Week 10",
     title: "Behavioral Prep & Mock Drills",
     description: "Craft clear behavioral stories under SDE 2 leadership metrics and practice high-pressure simulations.",
@@ -312,10 +317,14 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
       return of(new HttpResponse({
         status: 200,
         body: {
-          staticRoadmap,
           personalizedRoadmap: db.milestones || []
         }
       })).pipe(delay(200));
+    }
+
+    // 11b. GET STATIC ROADMAP
+    if (urlParts.endsWith('/api/static-roadmap') && method === 'GET') {
+      return of(new HttpResponse({ status: 200, body: { staticRoadmap } })).pipe(delay(200));
     }
 
     // 12. ADD ROADMAP MILESTONE

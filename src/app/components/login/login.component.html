@@ -82,9 +82,12 @@
             name="password"
             placeholder="••••••••"
             [(ngModel)]="password"
+            [attr.minlength]="isRegister ? 8 : null"
+            [attr.maxlength]="isRegister ? 72 : null"
             class="w-full bg-white/5 border border-white/10 placeholder-slate-500 rounded-xl py-3 pl-11 pr-4 text-white text-sm focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all"
           />
         </div>
+        <p *ngIf="isRegister" class="text-slate-500 text-xs mt-1.5">8 to 72 characters.</p>
       </div>
 
       <!-- Submit Button -->

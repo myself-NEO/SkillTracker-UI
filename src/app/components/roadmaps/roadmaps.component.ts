@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { LucideCompass, LucideMap } from '@lucide/angular';
+import { LucideCheck, LucideChevronRight, LucideCompass, LucideMap, LucidePlus, LucideTarget } from '@lucide/angular';
 import { RoadmapService } from '../../services/roadmap.service';
 import { Milestone, StaticRoadmapItem } from '../../../types';
 import { CommonModule } from '@angular/common';
@@ -8,7 +8,7 @@ import { CommonModule } from '@angular/common';
 @Component({
   selector: 'app-roadmaps',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideCompass, LucideMap],
+  imports: [CommonModule, FormsModule, LucideCheck, LucideChevronRight, LucideCompass, LucideMap, LucidePlus, LucideTarget],
   templateUrl: './roadmaps.component.html',
   styleUrls: ['./roadmaps.component.scss']
 })

@@ -24,6 +24,11 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   private messageListener!: (e: MessageEvent) => void;
 
+  // OAuth `state` for the Google sign-in currently in progress (null when none). The callback hands
+  // it back with the token; a token that arrives with any other state was not started by this page
+  // (login CSRF) and is ignored.
+  private pendingOAuthState: string | null = null;
+
   // The Google callback page is served by the backend itself (see AuthController#googleCallback),
   // so the popup's postMessage originates from the API's origin, not this app's.
   private readonly backendOrigin = new URL(API_BASE_URL, window.location.origin).origin;
@@ -38,6 +43,10 @@ export class LoginComponent implements OnInit, OnDestroy {
       }
 
       if (e.data?.type === 'OAUTH_AUTH_SUCCESS') {
+        if (!this.pendingOAuthState || e.data.state !== this.pendingOAuthState) {
+          return;
+        }
+        this.pendingOAuthState = null;
         try {
           if (e.data.token) {
             this.authService.setToken(e.data.token);
@@ -104,7 +113,9 @@ export class LoginComponent implements OnInit, OnDestroy {
   async handleGoogleLogin(): Promise<void> {
     this.error = null;
     try {
-      const url = await this.authService.getGoogleAuthUrl();
+      const state = this.newOAuthState();
+      const url = await this.authService.getGoogleAuthUrl(state);
+      this.pendingOAuthState = state;
 
       const width = 500;
       const height = 650;
@@ -123,5 +134,11 @@ export class LoginComponent implements OnInit, OnDestroy {
     } catch (err: any) {
       this.error = err.error || err.message || 'Failed to initialize Google Authentication';
     }
+  }
+
+  /** 32 random bytes, base64url-encoded (43 characters, URL-safe). */
+  private newOAuthState(): string {
+    const bytes = crypto.getRandomValues(new Uint8Array(32));
+    return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 }

@@ -11,8 +11,23 @@ export class RoadmapService {
 
   async getRoadmapData(): Promise<{ staticRoadmap: StaticRoadmapItem[], personalizedRoadmap: Milestone[] }> {
     try {
+      const [staticData, personalData] = await Promise.all([
+        firstValueFrom(this.http.get<{ staticRoadmap: StaticRoadmapItem[] }>('/api/static-roadmap')),
+        firstValueFrom(this.http.get<{ personalizedRoadmap: Milestone[] }>('/api/roadmap'))
+      ]);
+      return {
+        staticRoadmap: staticData.staticRoadmap,
+        personalizedRoadmap: personalData.personalizedRoadmap
+      };
+    } catch (err: any) {
+      throw err.error || err;
+    }
+  }
+
+  async addStaticRoadmapItem(item: Omit<StaticRoadmapItem, 'id'>): Promise<StaticRoadmapItem> {
+    try {
       return await firstValueFrom(
-        this.http.get<{ staticRoadmap: StaticRoadmapItem[], personalizedRoadmap: Milestone[] }>('/api/roadmap')
+        this.http.post<StaticRoadmapItem>('/api/static-roadmap', item)
       );
     } catch (err: any) {
       throw err.error || err;
