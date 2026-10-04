@@ -6,7 +6,7 @@ export const authGuard: CanActivateFn = async (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  const user = await authService.checkSession();
+  const user = await authService.ensureSession();
   if (user) {
     return true;
   }
@@ -19,7 +19,7 @@ export const guestGuard: CanActivateFn = async (route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  const user = await authService.checkSession();
+  const user = await authService.ensureSession();
   if (!user) {
     return true;
   }
