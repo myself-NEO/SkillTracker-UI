@@ -52,11 +52,17 @@ export interface Milestone {
   order: number;
 }
 
+export type RoadmapType = 'DSA' | 'HLD' | 'LLD' | 'Behaviour' | 'Good to know';
+
 export interface StaticRoadmapItem {
+  id?: string;
+  type: RoadmapType;
   week: string;
   title: string;
   description: string;
+  url?: string;
   topics: string[];
+  practice?: string[];
 }
 
 export interface DashboardData {
