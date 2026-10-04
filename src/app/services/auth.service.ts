@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { User } from '../../types';
 
@@ -11,6 +11,7 @@ export class AuthService {
   loading = signal<boolean>(true);
 
   private readonly TOKEN_KEY = 'sde_prep_token';
+  private pendingCheck: Promise<User | null> | null = null;
 
   constructor(private http: HttpClient) {}
 
@@ -22,24 +23,62 @@ export class AuthService {
     localStorage.setItem(this.TOKEN_KEY, token);
   }
 
-  async checkSession(): Promise<User | null> {
-    this.loading.set(true);
+  /**
+   * The signed-in user, asking the backend only when it isn't known yet. Route guards call this on
+   * every navigation, so after the first check switching pages costs no request. The token's expiry
+   * is checked locally each time; any other problem with it (e.g. revoked or tampered) shows up as
+   * a 401 on the next API call, which unauthorizedInterceptor turns into a logout.
+   */
+  async ensureSession(): Promise<User | null> {
     const token = this.getToken();
-    if (!token) {
+    if (!token || this.isExpired(token)) {
+      await this.logout();
+      this.loading.set(false);
+      return null;
+    }
+    return this.currentUser() ?? this.checkSession();
+  }
+
+  /** Always asks the backend (e.g. right after Google sign-in). Concurrent calls share one request. */
+  checkSession(): Promise<User | null> {
+    this.pendingCheck ??= this.fetchCurrentUser().finally(() => (this.pendingCheck = null));
+    return this.pendingCheck;
+  }
+
+  private async fetchCurrentUser(): Promise<User | null> {
+    if (!this.getToken()) {
       this.currentUser.set(null);
       this.loading.set(false);
       return null;
     }
 
+    // The full-screen loader only covers the very first check, never a re-check.
+    if (!this.currentUser()) {
+      this.loading.set(true);
+    }
     try {
       const user = await firstValueFrom(this.http.get<User>('/api/auth/me'));
       this.currentUser.set(user);
       return user;
-    } catch {
-      await this.logout();
-      return null;
+    } catch (err) {
+      // Only the backend rejecting the token ends the session. A timeout or network error (e.g. the
+      // backend still waking up) keeps it, so the next navigation can simply try again.
+      if (err instanceof HttpErrorResponse && err.status === 401) {
+        await this.logout();
+      }
+      return this.currentUser();
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  /** Reads the JWT's `exp` claim without calling the backend. Undecodable → let the backend decide. */
+  private isExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return typeof payload.exp === 'number' && payload.exp * 1000 <= Date.now();
+    } catch {
+      return false;
     }
   }
 
