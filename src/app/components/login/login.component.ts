@@ -1,8 +1,7 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { API_BASE_URL } from '../../config/api-base-url';
 import { LucideLock, LucideShield, LucideUser, LucideSparkles, LucideUserCheck } from '@lucide/angular';
 import { CommonModule } from '@angular/common';
 
@@ -13,7 +12,7 @@ import { CommonModule } from '@angular/common';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
-export class LoginComponent implements OnInit, OnDestroy {
+export class LoginComponent implements OnInit {
   isRegister = false;
   email = '';
   password = '';
@@ -21,53 +20,21 @@ export class LoginComponent implements OnInit, OnDestroy {
   error: string | null = null;
   loading = false;
   successMsg: string | null = null;
-
-  private messageListener!: (e: MessageEvent) => void;
-
-  // OAuth `state` for the Google sign-in currently in progress (null when none). The callback hands
-  // it back with the token; a token that arrives with any other state was not started by this page
-  // (login CSRF) and is ignored.
-  private pendingOAuthState: string | null = null;
-
-  // The Google callback page is served by the backend itself (see AuthController#googleCallback),
-  // so the popup's postMessage originates from the API's origin, not this app's.
-  private readonly backendOrigin = new URL(API_BASE_URL, window.location.origin).origin;
+  googleRedirecting = false;
 
   constructor(private authService: AuthService, private router: Router) {}
 
   ngOnInit(): void {
-    // Setup message listener for Google OAuth login success inside popup window
-    this.messageListener = async (e: MessageEvent) => {
-      if (e.origin !== this.backendOrigin && e.origin !== window.location.origin) {
-        return;
-      }
-
-      if (e.data?.type === 'OAUTH_AUTH_SUCCESS') {
-        if (!this.pendingOAuthState || e.data.state !== this.pendingOAuthState) {
-          return;
-        }
-        this.pendingOAuthState = null;
-        try {
-          if (e.data.token) {
-            this.authService.setToken(e.data.token);
-          }
-          const user = await this.authService.checkSession();
-          if (user) {
-            this.router.navigate(['/dashboard']);
-          } else {
-            this.error = 'Failed to fetch user session details.';
-          }
-        } catch {
-          this.error = 'Session retrieval failed.';
-        }
-      }
-    };
-    window.addEventListener('message', this.messageListener);
+    // A Google sign-in that just came back unsuccessfully (see AuthService#captureGoogleRedirect).
+    this.error = this.authService.takeGoogleSignInError();
   }
 
-  ngOnDestroy(): void {
-    if (this.messageListener) {
-      window.removeEventListener('message', this.messageListener);
+  // Coming back with the browser's Back button can restore this page exactly as it was left,
+  // button still disabled; re-enable it.
+  @HostListener('window:pageshow', ['$event'])
+  onPageShow(event: PageTransitionEvent): void {
+    if (event.persisted) {
+      this.googleRedirecting = false;
     }
   }
 
@@ -112,33 +79,13 @@ export class LoginComponent implements OnInit, OnDestroy {
 
   async handleGoogleLogin(): Promise<void> {
     this.error = null;
+    this.googleRedirecting = true;
     try {
-      const state = this.newOAuthState();
-      const url = await this.authService.getGoogleAuthUrl(state);
-      this.pendingOAuthState = state;
-
-      const width = 500;
-      const height = 650;
-      const left = window.screenX + (window.outerWidth - width) / 2;
-      const top = window.screenY + (window.outerHeight - height) / 2;
-
-      const authWindow = window.open(
-        url,
-        'google_oauth_popup',
-        `width=${width},height=${height},left=${left},top=${top},status=no,resizable=yes`
-      );
-
-      if (!authWindow) {
-        this.error = 'Popup blocked! Please allow popups for this site to log in with Google.';
-      }
+      // Leaves this page for Google; we come back to the site root once the user has signed in.
+      await this.authService.startGoogleSignIn();
     } catch (err: any) {
+      this.googleRedirecting = false;
       this.error = err.error || err.message || 'Failed to initialize Google Authentication';
     }
-  }
-
-  /** 32 random bytes, base64url-encoded (43 characters, URL-safe). */
-  private newOAuthState(): string {
-    const bytes = crypto.getRandomValues(new Uint8Array(32));
-    return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
 }

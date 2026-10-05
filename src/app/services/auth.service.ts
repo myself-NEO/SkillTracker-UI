@@ -3,6 +3,12 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { User } from '../../types';
 
+const GOOGLE_SIGN_IN_ERRORS: Record<string, string> = {
+  cancelled: 'Google sign-in was cancelled.',
+  email_unverified: "Your Google account's email address isn't verified, so it can't be used to sign in.",
+  failed: 'Google sign-in failed. Please try again.'
+};
+
 @Injectable({
   providedIn: 'root'
 })
@@ -11,7 +17,12 @@ export class AuthService {
   loading = signal<boolean>(true);
 
   private readonly TOKEN_KEY = 'sde_prep_token';
+  // The OAuth state of the Google sign-in this tab started. sessionStorage is per tab and survives
+  // the round trip to Google and back.
+  private readonly OAUTH_STATE_KEY = 'sde_prep_oauth_state';
   private pendingCheck: Promise<User | null> | null = null;
+  private googleSignIn: Promise<void> | null = null;
+  private googleSignInError: string | null = null;
 
   constructor(private http: HttpClient) {}
 
@@ -30,6 +41,9 @@ export class AuthService {
    * a 401 on the next API call, which unauthorizedInterceptor turns into a logout.
    */
   async ensureSession(): Promise<User | null> {
+    if (this.googleSignIn) {
+      await this.googleSignIn;
+    }
     const token = this.getToken();
     if (!token || this.isExpired(token)) {
       await this.logout();
@@ -108,7 +122,80 @@ export class AuthService {
     this.currentUser.set(null);
   }
 
-  async getGoogleAuthUrl(state: string): Promise<string> {
+  /**
+   * Google sign-in, step 1: remember a fresh one-time state in this tab, then send the whole tab to
+   * Google (a redirect, not a popup, so mobile browsers can't block it). The backend brings the
+   * browser back to this site's root with the result in the URL fragment - see
+   * captureGoogleRedirect.
+   */
+  async startGoogleSignIn(): Promise<void> {
+    const state = this.newOAuthState();
+    this.storeOAuthState(state);
+    try {
+      window.location.assign(await this.getGoogleAuthUrl(state));
+    } catch (err) {
+      this.storeOAuthState(null);
+      throw err;
+    }
+  }
+
+  /**
+   * Google sign-in, step 2. Runs once at startup, before the first navigation (see app.config.ts):
+   * picks up `#oauth_code=...&state=...` or `#oauth_error=...&state=...`, removes it from the
+   * address bar, and accepts it only if the state is the one this tab stored before leaving - a
+   * result for a sign-in someone else started (login CSRF) is dropped. The code is then traded for
+   * the JWT; ensureSession waits for that, so the route guards see the signed-in user.
+   */
+  captureGoogleRedirect(): void {
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    const code = params.get('oauth_code');
+    const error = params.get('oauth_error');
+    if (!code && !error) {
+      return;
+    }
+    history.replaceState(history.state, '', window.location.pathname + window.location.search);
+
+    const expectedState = this.storedOAuthState();
+    this.storeOAuthState(null);
+    const state = params.get('state');
+    if (!expectedState || state !== expectedState) {
+      this.googleSignInError = "That Google sign-in wasn't started from this tab. Please try again.";
+      return;
+    }
+    if (error || !code) {
+      this.googleSignInError = GOOGLE_SIGN_IN_ERRORS[error ?? 'failed'] ?? GOOGLE_SIGN_IN_ERRORS['failed'];
+      return;
+    }
+    this.googleSignIn = this.completeGoogleSignIn(code, state).finally(() => (this.googleSignIn = null));
+  }
+
+  hasGoogleSignInError(): boolean {
+    return this.googleSignInError !== null;
+  }
+
+  /** The message for a Google sign-in that just came back unsuccessfully, shown once. */
+  takeGoogleSignInError(): string | null {
+    const message = this.googleSignInError;
+    this.googleSignInError = null;
+    return message;
+  }
+
+  private async completeGoogleSignIn(code: string, state: string): Promise<void> {
+    this.loading.set(true);
+    try {
+      const res = await firstValueFrom(
+        this.http.post<{ token: string; user: User }>('/api/auth/google/exchange', { code, state })
+      );
+      this.setToken(res.token);
+      this.currentUser.set(res.user);
+    } catch {
+      this.googleSignInError = 'Google sign-in could not be completed. Please try again.';
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  private async getGoogleAuthUrl(state: string): Promise<string> {
     try {
       const res = await firstValueFrom(
         this.http.get<{ url: string }>('/api/auth/google-url', { params: { state } })
@@ -119,6 +206,32 @@ export class AuthService {
         throw new Error("Google sign-in isn't configured on this server. Please use your email and password.");
       }
       throw new Error('Google sign-in is unavailable right now. Please try again or use your email and password.');
+    }
+  }
+
+  /** 32 random bytes, base64url-encoded (43 characters, URL-safe). */
+  private newOAuthState(): string {
+    const bytes = crypto.getRandomValues(new Uint8Array(32));
+    return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  private storedOAuthState(): string | null {
+    try {
+      return sessionStorage.getItem(this.OAUTH_STATE_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  private storeOAuthState(state: string | null): void {
+    try {
+      if (state) {
+        sessionStorage.setItem(this.OAUTH_STATE_KEY, state);
+      } else {
+        sessionStorage.removeItem(this.OAUTH_STATE_KEY);
+      }
+    } catch {
+      // Storage unavailable: the returning sign-in will fail the state check and ask to retry.
     }
   }
 }

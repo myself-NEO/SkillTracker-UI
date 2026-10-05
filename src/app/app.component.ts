@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { AuthService } from './services/auth.service';
 
@@ -13,7 +13,7 @@ import { AuthService } from './services/auth.service';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  constructor(public authService: AuthService, private http: HttpClient) {}
+  constructor(public authService: AuthService, private http: HttpClient, private router: Router) {}
 
   async ngOnInit(): Promise<void> {
     // The backend sleeps when idle (Render free tier) and takes a while to boot. Wake it up as soon
@@ -22,5 +22,10 @@ export class AppComponent implements OnInit {
     this.http.get('/api/health').subscribe({ error: () => {} });
 
     await this.authService.ensureSession();
+
+    // A Google sign-in that just came back unsuccessfully: the login page shows why.
+    if (this.authService.hasGoogleSignInError()) {
+      this.router.navigate(['/login']);
+    }
   }
 }
