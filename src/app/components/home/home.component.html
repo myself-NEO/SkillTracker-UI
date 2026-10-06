@@ -47,9 +47,20 @@
     </div>
   </div>
 
-  <button type="button"
-          routerLink="/login"
-          class="mt-8 w-full max-w-[440px] bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all duration-200 text-sm shadow-lg shadow-indigo-600/20 cursor-pointer">
-    Log in to hone your skills
-  </button>
+  @if (authService.signedIn()) {
+    <a routerLink="/dashboard"
+       class="mt-8 w-full max-w-[440px] block text-center bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all duration-200 text-sm shadow-lg shadow-indigo-600/20 cursor-pointer">
+      @if (authService.currentUser()?.fullName; as name) {
+        Continue to your dashboard, {{ name.split(' ')[0] }}
+      } @else {
+        Continue to your dashboard
+      }
+    </a>
+  } @else {
+    <button type="button"
+            routerLink="/login"
+            class="mt-8 w-full max-w-[440px] bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold py-3 rounded-xl transition-all duration-200 text-sm shadow-lg shadow-indigo-600/20 cursor-pointer">
+      Log in to hone your skills
+    </button>
+  }
 </div>

@@ -7,9 +7,9 @@ import { authGuard, guestGuard } from './auth.guard';
 
 export const routes: Routes = [
   {
+    // Everyone, signed in or not, lands on the Snake page; signed-in users get a link to the dashboard.
     path: 'home',
-    component: HomeComponent,
-    canActivate: [guestGuard]
+    component: HomeComponent
   },
   {
     path: 'login',

@@ -1,7 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { Router, RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter } from 'rxjs';
 import { NavbarComponent } from './components/navbar/navbar.component';
 import { AuthService } from './services/auth.service';
 
@@ -13,7 +15,19 @@ import { AuthService } from './services/auth.service';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  constructor(public authService: AuthService, private http: HttpClient, private router: Router) {}
+  /** The Snake home page keeps its full-screen layout (no navbar) even for signed-in users. */
+  onHome = signal(AppComponent.isHomeUrl(window.location.pathname));
+
+  constructor(public authService: AuthService, private http: HttpClient, private router: Router) {
+    this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd), takeUntilDestroyed())
+      .subscribe((e) => this.onHome.set(AppComponent.isHomeUrl(e.urlAfterRedirects)));
+  }
+
+  private static isHomeUrl(url: string): boolean {
+    const path = url.split(/[?#]/)[0];
+    return path === '/' || path === '/home';
+  }
 
   async ngOnInit(): Promise<void> {
     // The backend sleeps when idle (Render free tier) and takes a while to boot. Wake it up as soon
@@ -23,8 +37,11 @@ export class AppComponent implements OnInit {
 
     await this.authService.ensureSession();
 
-    // A Google sign-in that just came back unsuccessfully: the login page shows why.
-    if (this.authService.hasGoogleSignInError()) {
+    // Back from Google: signed in -> straight to the dashboard (Google returns to the site root,
+    // which is the Snake page); unsuccessful -> the login page shows why.
+    if (this.authService.takeGoogleSignInCompleted()) {
+      this.router.navigate(['/dashboard']);
+    } else if (this.authService.hasGoogleSignInError()) {
       this.router.navigate(['/login']);
     }
   }

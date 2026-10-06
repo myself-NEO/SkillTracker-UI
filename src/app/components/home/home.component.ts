@@ -1,6 +1,7 @@
 import { Component, ElementRef, HostListener, OnDestroy, AfterViewInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 type Point = { x: number; y: number };
 type GameState = 'idle' | 'running' | 'paused' | 'over';
@@ -32,6 +33,8 @@ const KEY_TO_DIRECTION: Record<string, string> = {
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent implements AfterViewInit, OnDestroy {
+  constructor(public authService: AuthService) {}
+
   @ViewChild('board', { static: true }) boardRef!: ElementRef<HTMLCanvasElement>;
 
   readonly boardPx = GRID_SIZE * CELL_PX;
