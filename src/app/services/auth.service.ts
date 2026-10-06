@@ -202,6 +202,9 @@ export class AuthService {
       );
       return res.url;
     } catch (err: any) {
+      if (err?.status === 429 && err.error?.message) {
+        throw new Error(err.error.message);
+      }
       if (err?.status === 501) {
         throw new Error("Google sign-in isn't configured on this server. Please use your email and password.");
       }
