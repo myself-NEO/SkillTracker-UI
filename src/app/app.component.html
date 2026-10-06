@@ -12,7 +12,7 @@
     </div>
   </div>
 } @else {
-  @if (authService.currentUser(); as user) {
+  @if (authService.signedIn() && !onHome()) {
     <!-- Logged in tracker workspace layout -->
     <div class="min-h-screen bg-gradient-to-br from-[#0c0d19] via-[#090a0f] to-black text-slate-100 flex flex-col font-sans relative overflow-x-hidden">
       
@@ -35,7 +35,7 @@
 
     </div>
   } @else {
-    <!-- Not logged in: Show the Login View (Component rendered via routing) -->
+    <!-- Not logged in, or the Snake home page: full-screen layout without the navbar -->
     <div class="min-h-screen bg-gradient-to-br from-[#0c0d19] via-[#090a0f] to-black text-slate-100 flex flex-col font-sans relative overflow-x-hidden">
       <!-- Decorative Background Elements -->
       <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-500 rounded-full blur-[120px] opacity-25 pointer-events-none"></div>

@@ -13,8 +13,15 @@ const GOOGLE_SIGN_IN_ERRORS: Record<string, string> = {
   providedIn: 'root'
 })
 export class AuthService {
+  /** The profile (name, picture). Loads in the background, so it can be null while signed in. */
   currentUser = signal<User | null>(null);
-  loading = signal<boolean>(true);
+  /**
+   * Holding a token that hasn't expired. Layout and route guards go by this alone, so pages open
+   * immediately even while the backend is still waking up (Render free tier).
+   */
+  signedIn = signal<boolean>(false);
+  /** Full-screen loader: only while a returning Google sign-in is being completed. */
+  loading = signal<boolean>(false);
 
   private readonly TOKEN_KEY = 'sde_prep_token';
   // The OAuth state of the Google sign-in this tab started. sessionStorage is per tab and survives
@@ -23,6 +30,7 @@ export class AuthService {
   private pendingCheck: Promise<User | null> | null = null;
   private googleSignIn: Promise<void> | null = null;
   private googleSignInError: string | null = null;
+  private googleSignInCompleted = false;
 
   constructor(private http: HttpClient) {}
 
@@ -32,25 +40,29 @@ export class AuthService {
 
   setToken(token: string): void {
     localStorage.setItem(this.TOKEN_KEY, token);
+    this.signedIn.set(true);
   }
 
   /**
-   * The signed-in user, asking the backend only when it isn't known yet. Route guards call this on
-   * every navigation, so after the first check switching pages costs no request. The token's expiry
-   * is checked locally each time; any other problem with it (e.g. revoked or tampered) shows up as
-   * a 401 on the next API call, which unauthorizedInterceptor turns into a logout.
+   * Whether the user is signed in, decided from the token alone: it exists and its expiry (read
+   * locally) hasn't passed. Never waits for the backend. Route guards call this on every navigation.
+   * The profile is fetched once in the background; if the backend rejects the token, that or any
+   * other API call gets a 401, which unauthorizedInterceptor turns into a logout.
    */
-  async ensureSession(): Promise<User | null> {
+  async ensureSession(): Promise<boolean> {
     if (this.googleSignIn) {
       await this.googleSignIn;
     }
     const token = this.getToken();
     if (!token || this.isExpired(token)) {
       await this.logout();
-      this.loading.set(false);
-      return null;
+      return false;
     }
-    return this.currentUser() ?? this.checkSession();
+    this.signedIn.set(true);
+    if (!this.currentUser()) {
+      void this.checkSession();
+    }
+    return true;
   }
 
   /** Always asks the backend (e.g. right after Google sign-in). Concurrent calls share one request. */
@@ -62,14 +74,9 @@ export class AuthService {
   private async fetchCurrentUser(): Promise<User | null> {
     if (!this.getToken()) {
       this.currentUser.set(null);
-      this.loading.set(false);
       return null;
     }
 
-    // The full-screen loader only covers the very first check, never a re-check.
-    if (!this.currentUser()) {
-      this.loading.set(true);
-    }
     try {
       const user = await firstValueFrom(this.http.get<User>('/api/auth/me'));
       this.currentUser.set(user);
@@ -81,8 +88,6 @@ export class AuthService {
         await this.logout();
       }
       return this.currentUser();
-    } finally {
-      this.loading.set(false);
     }
   }
 
@@ -120,6 +125,7 @@ export class AuthService {
   async logout(): Promise<void> {
     localStorage.removeItem(this.TOKEN_KEY);
     this.currentUser.set(null);
+    this.signedIn.set(false);
   }
 
   /**
@@ -169,6 +175,13 @@ export class AuthService {
     this.googleSignIn = this.completeGoogleSignIn(code, state).finally(() => (this.googleSignIn = null));
   }
 
+  /** True once, right after a Google sign-in has just completed. */
+  takeGoogleSignInCompleted(): boolean {
+    const completed = this.googleSignInCompleted;
+    this.googleSignInCompleted = false;
+    return completed;
+  }
+
   hasGoogleSignInError(): boolean {
     return this.googleSignInError !== null;
   }
@@ -188,6 +201,7 @@ export class AuthService {
       );
       this.setToken(res.token);
       this.currentUser.set(res.user);
+      this.googleSignInCompleted = true;
     } catch {
       this.googleSignInError = 'Google sign-in could not be completed. Please try again.';
     } finally {
