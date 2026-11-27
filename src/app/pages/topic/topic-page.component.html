@@ -83,7 +83,7 @@
         }
 
         @if (isDsa()) {
-          <section id="cheatsheets" aria-labelledby="cheatsheets-title">
+          <section id="cheatsheets" aria-labelledby="cheatsheets-title" class="scroll-mt-20">
             <div class="flex items-center gap-4">
               <span
                 class="grid size-11 shrink-0 place-items-center rounded-xl border border-border bg-surface font-mono text-sm font-semibold text-accent tabular-nums"
@@ -113,7 +113,7 @@
           </section>
         }
 
-        <section id="practice" aria-labelledby="practice-title">
+        <section id="practice" aria-labelledby="practice-title" class="scroll-mt-20">
           <p class="text-xs font-semibold tracking-[0.14em] text-muted uppercase">Practice</p>
           <h2 id="practice-title" class="font-display text-2xl font-semibold tracking-tight">{{ practiceTitle() }}</h2>
           <p class="mt-3 max-w-3xl text-fg-soft">{{ practiceIntro() }}</p>

@@ -16,7 +16,7 @@ import { CHEATSHEETS } from '@content/dsa/cheatsheets';
 import { LEETCODE_PROBLEMS } from '@content/dsa/problems';
 import { PRACTICE_TOPICS } from '@content/dsa/practiceTopics';
 import { hasProblemBody } from '@content/shared/loaders';
-import type { ContentIndex, IndexTopic } from '@lib/content/catalog';
+import type { ContentIndex, IndexTopic, TrackFile } from '@lib/content/catalog';
 import type { ContentDoc } from '@lib/content/doc';
 import { topicStats } from '@lib/content/stats';
 import { flattenLessons, TRACKS } from '@lib/content/tracks';
@@ -82,7 +82,10 @@ const renderTo = async (file: string, markdown: string, basePath: string, javaVe
 
 for (const topic of TOPIC_IDS) {
   const track = TRACKS[topic];
-  write(path.join(OUT_DIR, topic, 'track.json'), track);
+  write(path.join(OUT_DIR, topic, 'track.json'), {
+    ...track,
+    writtenProblems: track.problems.filter((problem) => hasProblemBody(topic, problem.slug)).map((problem) => problem.slug),
+  } satisfies TrackFile);
   for (const { lesson } of flattenLessons(track)) {
     if (lesson.comingSoon) continue;
     await renderTo(

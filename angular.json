@@ -38,6 +38,13 @@
               "node_modules/@fontsource-variable/space-grotesk/index.css",
               "node_modules/@fontsource-variable/jetbrains-mono/index.css",
               "src/styles.css"
+            ],
+            "allowedCommonJsDependencies": [
+              "@braintree/sanitize-url",
+              "cytoscape-cose-bilkent",
+              "cytoscape-fcose",
+              "dayjs",
+              "elkjs"
             ]
           },
           "configurations": {

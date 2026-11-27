@@ -1,0 +1,104 @@
+<button
+  type="button"
+  (click)="show()"
+  aria-haspopup="dialog"
+  class="flex h-9 items-center gap-2 rounded-lg border border-border bg-surface px-2.5 text-sm text-muted transition-colors hover:border-border-strong hover:text-fg lg:w-56"
+>
+  <svg class="size-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+    <path
+      fill-rule="evenodd"
+      clip-rule="evenodd"
+      d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
+    />
+  </svg>
+  <span class="hidden flex-1 text-left lg:inline">Search</span>
+  <span class="sr-only lg:hidden">Search</span>
+  <kbd class="hidden rounded border border-border bg-surface-2 px-1.5 font-sans text-[11px] text-muted lg:inline">{{
+    shortcut
+  }}</kbd>
+</button>
+
+<dialog
+  #dialog
+  aria-label="Search"
+  (close)="open.set(false)"
+  (click)="onDialogClick($event)"
+  class="mx-auto mt-[8vh] w-[min(42rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border bg-surface p-0 text-fg shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-[2px]"
+>
+  @if (open()) {
+    <div class="flex max-h-[80vh] flex-col">
+      <div class="flex items-center gap-3 border-b border-border px-4">
+        <svg class="size-5 shrink-0 text-muted" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
+          />
+        </svg>
+        <input
+          #input
+          [value]="query()"
+          (input)="onInput($event)"
+          (keydown)="onInputKeys($event)"
+          role="combobox"
+          [attr.aria-expanded]="results().length > 0"
+          aria-controls="search-results"
+          [attr.aria-activedescendant]="results()[selected()] ? 'search-result-' + selected() : null"
+          aria-autocomplete="list"
+          aria-label="Search lessons, sections, problems and questions"
+          placeholder="Search lessons, sections, problems and questions"
+          class="h-14 min-w-0 flex-1 bg-transparent text-base text-fg placeholder:text-faint focus:outline-hidden"
+        />
+        <button
+          type="button"
+          (click)="close()"
+          class="rounded border border-border bg-surface-2 px-1.5 text-[11px] text-muted hover:text-fg"
+        >
+          Esc
+        </button>
+      </div>
+      <div class="min-h-0 flex-1 overflow-y-auto p-2">
+        @if (failed()) {
+          <p class="px-3 py-8 text-center text-sm text-muted">
+            The search index couldn’t be loaded. Check your connection and try again.
+          </p>
+        } @else if (!entries()) {
+          <p class="px-3 py-8 text-center text-sm text-muted" role="status">Loading the search index…</p>
+        } @else if (query().trim() === '') {
+          <p class="px-3 py-8 text-center text-sm text-muted">
+            Type a topic, a pattern or a problem: “sliding window”, “hashmap resize”, “rate limiter”.
+          </p>
+        } @else if (results().length === 0) {
+          <p class="px-3 py-8 text-center text-sm text-muted">No results for “{{ query() }}”.</p>
+        } @else {
+          <ul id="search-results" role="listbox" aria-label="Results">
+            @for (result of results(); track $index) {
+              <li
+                [id]="'search-result-' + $index"
+                role="option"
+                [attr.aria-selected]="$index === selected()"
+                [attr.data-track]="result.topic"
+                (mousemove)="selected.set($index)"
+                (click)="go(result.href)"
+                class="flex cursor-pointer items-start gap-3 rounded-lg px-3 py-2.5"
+                [class.bg-accent-soft]="$index === selected()"
+              >
+                <span
+                  class="mt-0.5 shrink-0 rounded border border-accent/30 px-1.5 text-[10px] leading-4 font-semibold tracking-wide text-accent uppercase"
+                  >{{ shortTitle[result.topic] }}</span
+                >
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-sm font-medium text-fg">{{ result.title }}</span>
+                  <span class="block truncate text-xs text-muted">{{ kindLabel[result.kind] }} · {{ result.context }}</span>
+                </span>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+      <p class="hidden border-t border-border px-4 py-2 text-[11px] text-muted sm:block">
+        ↑ ↓ to move · Enter to open · Esc to close
+      </p>
+    </div>
+  }
+</dialog>

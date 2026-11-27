@@ -18,8 +18,17 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "paths": {
-      "@lib/*": ["./src/lib/*"],
-      "@content/*": ["./content/*"]
+      "@lib/*": [
+        "./src/lib/*"
+      ],
+      "@content/*": [
+        "./content/*"
+      ]
     }
+  },
+  "angularCompilerOptions": {
+    "strictTemplates": true,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true
   }
 }

@@ -1,6 +1,7 @@
 import type { Cheatsheet } from '@content/dsa/cheatsheets';
 import type { LeetCodeProblem } from '@content/dsa/problems';
 import type { PracticeTopic } from '@content/dsa/practiceTopics';
+import type { Track } from '@content/shared/types';
 import type { Topic } from '@lib/topics';
 import type { topicStats } from './stats';
 
@@ -23,6 +24,12 @@ export interface ContentIndex {
   /** Changes whenever any generated file changes. */
   version: string;
   topics: IndexTopic[];
+}
+
+/** public/content/<topic>/track.json: the curriculum, and which problems have a written breakdown. */
+export interface TrackFile extends Track {
+  /** Slugs of the problems whose breakdown is written (the others are "coming soon"). */
+  writtenProblems: string[];
 }
 
 /** public/content/dsa/practice.json */

@@ -78,13 +78,16 @@ decides where Google sign-in may return.
 
 - `src/app/app.routes.ts`: the routes, in three frames:
   - the public pages, always dark (`layouts/game-layout`): Snake (`/home`) and `/login`;
-  - the signed-in app, light or dark (`shell/`): `/learn`, the topic pages (`/java`, `/dsa`, `/lld`,
-    `/hld`) and `/mock-interview`. Signed-out visitors are sent to `/login?returnUrl=…` and come back
-    afterwards;
+  - the signed-in app, light or dark (`shell/`, with the ⌘K search): `/learn`, the topic pages
+    (`/java`, `/dsa`, `/lld`, `/hld`), their lessons (`/java/generics-basics`), practice problems
+    (`/lld/problems/parking-lot`) and DSA's cheat sheets, and `/mock-interview`. Signed-out visitors
+    are sent to `/login?returnUrl=…` and come back afterwards;
   - the old `/dashboard` and `/roadmaps` (`layouts/legacy-layout`), out of the navigation until they
     are removed (docs/plan.md, Phase 6).
-- `src/app/pages`: the signed-in pages. `src/app/ui`: pieces they share (progress bars and icons,
-  topic glyphs, the hub's map).
+- `src/app/pages`: the signed-in pages. `pages/article` holds what lessons, problems and cheat sheets
+  share: the three-column layout, the sidebars, and the body renderer, which mounts the interactive
+  parts (Mermaid diagrams so far) into the build's HTML. `src/app/ui`: smaller shared pieces
+  (progress bars and icons, topic glyphs, the hub's map).
 - `src/app/core`: the theme, the learner's progress (kept in this browser per account for now), the
   generated content files and their route resolvers, scrolling and page titles.
 - `src/app/components`: the screens from before the redesign: Snake (`home`), `login`, `dashboard`,

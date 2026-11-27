@@ -1,0 +1,139 @@
+<div
+  [attr.data-track]="track()"
+  class="mx-auto grid w-full max-w-[90rem] px-4 sm:px-6 lg:grid-cols-[17rem_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[17rem_minmax(0,1fr)_14rem]"
+>
+  <div
+    aria-hidden="true"
+    (click)="closeDrawer()"
+    class="fixed inset-0 z-40 bg-black/40 transition-opacity lg:hidden"
+    [class.opacity-100]="drawerOpen()"
+    [class.opacity-0]="!drawerOpen()"
+    [class.pointer-events-none]="!drawerOpen()"
+  ></div>
+  <!-- Opening shows the drawer at once (so it can take focus) and slides it in; closing keeps it
+       visible until the slide out ends. -->
+  <aside
+    #aside
+    id="lesson-sidebar"
+    [attr.aria-label]="sidebarLabel()"
+    (keydown)="keepFocusInside($event)"
+    class="fixed inset-y-0 left-0 z-50 flex w-80 max-w-[85vw] flex-col border-r border-border bg-bg shadow-xl duration-200 lg:visible lg:sticky lg:top-14 lg:bottom-auto lg:z-auto lg:h-[calc(100dvh-3.5rem)] lg:w-auto lg:max-w-none lg:translate-x-0 lg:bg-transparent lg:shadow-none"
+    [class]="
+      drawerOpen()
+        ? 'visible translate-x-0 transition-[translate]'
+        : 'invisible -translate-x-full transition-[translate,visibility]'
+    "
+  >
+    <div class="flex h-14 shrink-0 items-center justify-between border-b border-border px-4 lg:hidden">
+      <p class="font-semibold">{{ sidebarLabel() }}</p>
+      <button
+        #closeButton
+        type="button"
+        (click)="closeDrawer()"
+        class="grid size-9 place-items-center rounded-lg text-muted hover:bg-surface-2 hover:text-fg"
+        aria-label="Close"
+      >
+        <svg class="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+          <path stroke-linecap="round" d="M5 5l10 10M15 5L5 15" />
+        </svg>
+      </button>
+    </div>
+    <div #scroller class="relative flex-1 overflow-y-auto overscroll-contain px-3 py-4 lg:px-0 lg:py-8 lg:pr-4">
+      <ng-content select="[sidebar]" />
+    </div>
+  </aside>
+
+  <div class="min-w-0">
+    <!-- Under the site header on screens without the sidebar or the contents rail. -->
+    <div
+      class="sticky top-14 z-30 -mx-4 flex h-12 items-center gap-2 border-b border-border bg-bg/90 px-4 backdrop-blur-md sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 xl:hidden"
+    >
+      <button
+        #openButton
+        type="button"
+        (click)="openDrawer()"
+        [attr.aria-expanded]="drawerOpen()"
+        aria-controls="lesson-sidebar"
+        class="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-fg-soft hover:text-fg lg:hidden"
+      >
+        <svg class="size-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+          <path stroke-linecap="round" d="M3.5 5.5h13M3.5 10h13M3.5 14.5h8" />
+        </svg>
+        {{ sidebarLabel() }}
+      </button>
+      @if (headings().length > 0) {
+        <div #sectionMenu class="min-w-0 flex-1 lg:relative">
+          <button
+            type="button"
+            (click)="menuOpen.set(!menuOpen())"
+            [attr.aria-expanded]="menuOpen()"
+            aria-controls="section-menu"
+            class="flex h-9 w-full min-w-0 items-center justify-end gap-2 text-sm text-muted hover:text-fg"
+          >
+            <span class="truncate">{{ activeHeading()?.text ?? 'On this page' }}</span>
+            <svg
+              class="size-4 shrink-0 transition-transform"
+              [class.rotate-180]="menuOpen()"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+              />
+            </svg>
+          </button>
+          @if (menuOpen()) {
+            <nav
+              id="section-menu"
+              aria-label="On this page"
+              class="absolute inset-x-0 top-full max-h-[min(60dvh,28rem)] overflow-y-auto border-b border-border bg-bg px-4 py-3 shadow-lg sm:px-6 lg:inset-x-auto lg:right-0 lg:w-80 lg:rounded-b-xl lg:border-x lg:px-3"
+            >
+              <ng-container [ngTemplateOutlet]="toc" [ngTemplateOutletContext]="{ closeMenu: true }" />
+            </nav>
+          }
+        </div>
+      }
+    </div>
+    <main id="main-content" class="mx-auto max-w-3xl pt-8 pb-16 lg:pt-10">
+      <ng-content />
+    </main>
+  </div>
+
+  <div class="hidden xl:block">
+    <div class="sticky top-14 max-h-[calc(100dvh-3.5rem)] space-y-8 overflow-y-auto py-10">
+      @if (headings().length > 0) {
+        <nav aria-label="On this page">
+          <p class="mb-3 text-xs font-semibold tracking-[0.14em] text-muted uppercase">On this page</p>
+          <ng-container [ngTemplateOutlet]="toc" [ngTemplateOutletContext]="{ closeMenu: false }" />
+        </nav>
+      }
+      <ng-content select="[rail]" />
+    </div>
+  </div>
+</div>
+
+<ng-template #toc let-closeMenu="closeMenu">
+  <ol class="border-l border-border text-sm">
+    @for (heading of headings(); track heading.id) {
+      <li>
+        <a
+          [routerLink]="[]"
+          [fragment]="heading.id"
+          (click)="closeMenu && menuOpen.set(false)"
+          [attr.aria-current]="heading.id === active() ? 'location' : null"
+          class="-ml-px block border-l py-1 pr-2 leading-5 transition-colors"
+          [class.pl-6]="heading.depth === 3"
+          [class.pl-3]="heading.depth !== 3"
+          [class.border-accent]="heading.id === active()"
+          [class.text-fg]="heading.id === active()"
+          [class.border-transparent]="heading.id !== active()"
+          [class.text-muted]="heading.id !== active()"
+          [class.hover:text-fg]="heading.id !== active()"
+        >
+          {{ heading.text }}
+        </a>
+      </li>
+    }
+  </ol>
+</ng-template>

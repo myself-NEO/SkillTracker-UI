@@ -3,7 +3,19 @@ import { TOPIC_IDS, TOPICS, type TopicId } from '@lib/topics';
 import { authGuard, guestGuard, signedInMatch } from './auth.guard';
 import { HomeComponent } from './components/home/home.component';
 import { LoginComponent } from './components/login/login.component';
-import { contentIndexResolver, dsaPracticeResolver, trackResolver } from './core/content.resolvers';
+import {
+  cheatsheetResolver,
+  cheatsheetTitleResolver,
+  contentIndexResolver,
+  dsaPracticeResolver,
+  lessonResolver,
+  lessonSlugMatch,
+  lessonTitleResolver,
+  libraryTitleResolver,
+  problemResolver,
+  problemTitleResolver,
+  trackResolver,
+} from './core/content.resolvers';
 import { GameLayoutComponent } from './layouts/game-layout.component';
 
 /** The signed-in frame, loaded with the first page behind the login. */
@@ -18,13 +30,49 @@ const shell = () => import('./shell/shell.component').then((m) => m.ShellCompone
 // Everything behind the login is loaded on demand, which keeps the first download small.
 
 const topicPage = () => import('./pages/topic/topic-page.component').then((m) => m.TopicPageComponent);
+const lessonPage = () => import('./pages/lesson/lesson-page.component').then((m) => m.LessonPageComponent);
+const problemPage = () => import('./pages/problems/problem-page.component').then((m) => m.ProblemPageComponent);
+const libraryPage = () =>
+  import('./pages/problems/problem-library-page.component').then((m) => m.ProblemLibraryPageComponent);
+const cheatsheetPage = () => import('./pages/cheatsheet/cheatsheet-page.component').then((m) => m.CheatsheetPageComponent);
 
-/** One topic's pages, e.g. /java. The topic is in the route data; its curriculum is resolved once for all of them. */
+/**
+ * One topic's pages, e.g. /java. The topic is in the route data; its curriculum is resolved once for
+ * all of them. Section pages come before /:lesson, which leaves the sections not ported yet
+ * (lessonSlugMatch) to the not-found page. DSA's practice is its coding-question list (Phase 5).
+ */
 const topicRoute = (topic: TopicId): Route => ({
   path: topic,
   data: { topic },
   resolve: { track: trackResolver, ...(topic === 'dsa' ? { practice: dsaPracticeResolver } : {}) },
-  children: [{ path: '', title: TOPICS.find((info) => info.id === topic)!.title, loadComponent: topicPage }],
+  children: [
+    { path: '', title: TOPICS.find((info) => info.id === topic)!.title, loadComponent: topicPage },
+    ...(topic === 'dsa'
+      ? [
+          {
+            path: 'cheatsheets/:slug',
+            title: cheatsheetTitleResolver,
+            resolve: { page: cheatsheetResolver },
+            loadComponent: cheatsheetPage,
+          },
+        ]
+      : [
+          { path: 'problems', title: libraryTitleResolver, loadComponent: libraryPage },
+          {
+            path: 'problems/:problem',
+            title: problemTitleResolver,
+            resolve: { page: problemResolver },
+            loadComponent: problemPage,
+          },
+        ]),
+    {
+      path: ':lesson',
+      canMatch: [lessonSlugMatch],
+      title: lessonTitleResolver,
+      resolve: { page: lessonResolver },
+      loadComponent: lessonPage,
+    },
+  ],
 });
 
 export const routes: Routes = [

@@ -1,32 +1,7 @@
-import { expect, type Page, request, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
+import { ACCOUNT, testAccountToken } from './backend';
 
 // Signing in end to end, through the local backend (http://localhost:8080) and its local database.
-// One fixed account is reused across runs: the backend allows only 5 sign-ups per hour and 20 login
-// attempts per 15 minutes from one address, so the account is checked once per worker, not per test.
-
-const API = 'http://localhost:8080';
-const ACCOUNT = { email: 'e2e-tester@example.com', password: 'correct-horse-42', fullName: 'E2E Tester' };
-
-/** Whether the backend is up; if so, signs up the test account the first time (afterwards it exists). */
-async function prepareBackend(): Promise<boolean> {
-  const api = await request.newContext();
-  try {
-    if (!(await api.get(`${API}/api/health`, { timeout: 5_000 })).ok()) return false;
-    const login = await api.post(`${API}/api/auth/login`, { data: { email: ACCOUNT.email, password: ACCOUNT.password } });
-    if (login.ok()) return true;
-    const registered = await api.post(`${API}/api/auth/register`, { data: ACCOUNT });
-    // Another worker may have signed it up a moment ago.
-    if (!registered.ok() && !(await registered.text()).includes('already exists')) {
-      throw new Error(`Could not create the e2e account: ${registered.status()} ${await registered.text()}`);
-    }
-    return true;
-  } catch (error) {
-    if (error instanceof Error && error.message.startsWith('Could not create')) throw error;
-    return false;
-  } finally {
-    await api.dispose();
-  }
-}
 
 async function signIn(page: Page, email = ACCOUNT.email, password = ACCOUNT.password) {
   await page.getByPlaceholder('you@example.com').fill(email);
@@ -37,7 +12,7 @@ async function signIn(page: Page, email = ACCOUNT.email, password = ACCOUNT.pass
 test.describe('signing in (needs the local backend)', () => {
   test.beforeAll(async () => {
     test.skip(
-      !(await prepareBackend()),
+      !(await testAccountToken()),
       'Start SkillTracker-Srcv locally (docker compose up -d, then mvn spring-boot:run) to run these.',
     );
   });
