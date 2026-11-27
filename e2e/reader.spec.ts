@@ -1,17 +1,21 @@
 import { expect, test } from '@playwright/test';
-import { signInWithToken, testAccountToken } from './backend';
+import { clearProgress, serverProgress, signInWithToken, testAccountToken } from './backend';
 
-// Reading: lessons, practice problems, cheat sheets and search. Signed in with the shared test
+// Reading: lessons, practice problems, cheat sheets and search. Signed in with the project's test
 // account's token (see backend.ts), so these need the local backend running too.
 
 test.describe('reading (needs the local backend)', () => {
-  test.beforeEach(async ({ page }) => {
-    const token = await testAccountToken();
-    test.skip(!token, 'Start SkillTracker-Srcv locally (docker compose up -d, then mvn spring-boot:run) to run these.');
-    await signInWithToken(page, token!);
+  let token: string;
+
+  test.beforeEach(async ({ page }, testInfo) => {
+    const found = await testAccountToken(testInfo.project.name);
+    test.skip(!found, 'Start SkillTracker-Srcv locally (docker compose up -d, then mvn spring-boot:run) to run these.');
+    token = found!;
+    await signInWithToken(page, token);
   });
 
   test('a lesson opens from its roadmap, moves between sections, and can be marked complete', async ({ page }) => {
+    await clearProgress(token, { lessons: { 'java:introduction-to-java': null } });
     await page.goto('/java');
     await page.getByRole('link', { name: /Introduction to Java & Platform Independence/ }).first().click();
 
@@ -28,6 +32,24 @@ test.describe('reading (needs the local backend)', () => {
     await expect(page).toHaveURL(/\/java\/jdk-jre-jvm$/);
   });
 
+  test('progress is saved to the account and shows in another browser', async ({ page, browser }) => {
+    await clearProgress(token, { lessons: { 'java:jdk-jre-jvm': null } });
+    await page.goto('/java/jdk-jre-jvm');
+    await page.getByRole('button', { name: 'Mark as complete' }).click();
+    // Sent a few seconds later.
+    await expect.poll(async () => (await serverProgress(token)).lessons?.['java:jdk-jre-jvm'], { timeout: 15_000 }).toBeTruthy();
+
+    const elsewhere = await browser.newContext();
+    try {
+      const other = await elsewhere.newPage();
+      await signInWithToken(other, token);
+      await other.goto('/java/jdk-jre-jvm');
+      await expect(other.getByRole('button', { name: 'Completed' })).toBeVisible();
+    } finally {
+      await elsewhere.close();
+    }
+  });
+
   test('a lesson link to another page opens it inside the app', async ({ page }) => {
     await page.goto('/hld/aggregation-discovery');
     // Diagrams are drawn once they come near the viewport.
@@ -40,6 +62,7 @@ test.describe('reading (needs the local backend)', () => {
   });
 
   test('the practice library filters, and a problem records its status', async ({ page }) => {
+    await clearProgress(token, { problems: { 'lld:parking-lot': null }, problemsAt: { 'lld:parking-lot': null } });
     await page.goto('/lld/problems');
     await page.getByRole('searchbox').fill('parking');
     await page.getByRole('link', { name: /Parking Lot/ }).first().click();

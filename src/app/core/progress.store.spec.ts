@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { isLessonComplete } from '@lib/progress/progress';
 import { AuthService } from '../services/auth.service';
 import { ProgressStore } from './progress.store';
+import { StateSync } from './state-sync.service';
 
 describe('ProgressStore', () => {
   const userId = signal<string | null>(null);
@@ -10,7 +11,13 @@ describe('ProgressStore', () => {
   beforeEach(() => {
     localStorage.clear();
     userId.set(null);
-    TestBed.configureTestingModule({ providers: [{ provide: AuthService, useValue: { userId } }] });
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: AuthService, useValue: { userId } },
+        // Saving to the account is StateSync's own test.
+        { provide: StateSync, useValue: { register: () => {}, changed: () => {} } },
+      ],
+    });
   });
 
   const create = () => {

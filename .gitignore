@@ -13,3 +13,5 @@ playwright-report/
 content/.generated/
 public/content/
 public/search-index.json
+# Test-account tokens kept between e2e runs (e2e/backend.ts)
+e2e/.auth/

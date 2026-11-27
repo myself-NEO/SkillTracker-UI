@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ThemeService } from '../core/theme.service';
+import { StateSync } from '../core/state-sync.service';
 import { AuthService } from '../services/auth.service';
 
 /** The signed-in person's avatar, opening a small menu: who is signed in, the theme (phones), the Snake game, sign out. */
@@ -35,6 +36,7 @@ import { AuthService } from '../services/auth.service';
           @if (user()?.email; as email) {
             <p class="truncate text-xs text-muted">{{ email }}</p>
           }
+          <p class="mt-2 text-xs" [class]="saveNote().tone">{{ saveNote().text }}</p>
         </div>
         <button
           type="button"
@@ -65,6 +67,7 @@ export class AccountMenuComponent {
   private readonly element = inject(ElementRef<HTMLElement>);
   /** The menu also switches the theme on phones, where the header has no room for the toggle. */
   protected readonly theme = inject(ThemeService);
+  private readonly sync = inject(StateSync);
 
   protected readonly open = signal(false);
   protected readonly user = this.auth.currentUser;
@@ -74,8 +77,35 @@ export class AccountMenuComponent {
     if (this.open() && !this.element.nativeElement.contains(event.target as Node)) this.open.set(false);
   }
 
+  /** Where the learner's progress stands, in words. */
+  protected readonly saveNote = computed(() => {
+    switch (this.sync.status()) {
+      case 'pending':
+      case 'saving':
+        return { text: 'Saving your progress…', tone: 'text-muted' };
+      case 'offline':
+        return { text: 'Offline: changes are kept here and saved once the server is back.', tone: 'text-warning' };
+      case 'error':
+        return { text: 'Your latest changes couldn’t be saved; they are kept in this browser.', tone: 'text-danger' };
+      case 'saved':
+        return { text: 'Progress saved to your account.', tone: 'text-muted' };
+      default:
+        return { text: 'Progress is saved to your account.', tone: 'text-muted' };
+    }
+  });
+
   protected async signOut() {
     this.open.set(false);
+    // Send what hasn't reached the account yet; if it can't be, say so before leaving.
+    const saved = await this.sync.settle();
+    if (
+      !saved &&
+      !confirm(
+        'Some of your latest progress hasn’t reached your account yet. It stays in this browser and is saved the next time you sign in here. Sign out anyway?',
+      )
+    ) {
+      return;
+    }
     await this.auth.logout();
     await this.router.navigate(['/home']);
   }

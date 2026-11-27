@@ -56,8 +56,15 @@ npm run e2e        # end-to-end tests (Playwright, desktop Chrome and a Pixel 7)
 ```
 
 - `npm run e2e` starts `npm run dev` itself, or reuses one already running on port 3000.
-- Its sign-in tests need the local backend on port 8080, and skip themselves when it isn't running.
-- They reuse one test account, `e2e-tester@example.com`, in the local database.
+- The signed-in tests need the local backend on port 8080, and skip themselves when it isn't running.
+- They use one test account per Playwright project in the local database, `e2e-desktop@example.com`
+  and `e2e-mobile@example.com`, created on the first run. Progress is saved to the account, so the
+  two projects each need their own.
+- `e2e/global-setup.ts` signs both accounts in once and keeps the tokens in `e2e/.auth/tokens.json`
+  (git-ignored) while they're valid (a day).
+- The backend allows 20 login attempts per 15 minutes from one address. The sign-in tests use 6 per
+  run, so after about three runs in 15 minutes they fail with 429. Restarting the local backend
+  resets the limit.
 - On Node 25 and later, `src/test-setup.ts` restores the simulated browser's `localStorage`, which
   Node's own `localStorage` global would otherwise hide.
 
@@ -89,9 +96,10 @@ decides where Google sign-in may return.
   parts into the build's HTML. `src/app/widgets`: those parts (quiz, drill, checklist, estimator).
   `src/app/viz`: the animation player, its seven scenes, and the FLIP motion they move with.
   `src/app/ui`: smaller shared pieces (progress bars and icons, topic glyphs, the hub's map).
-- `src/app/core`: the theme, the learner's progress and checklist ticks (kept in this browser per
-  account for now, `user-storage.ts`), the generated content files and their route resolvers,
-  scrolling and page titles.
+- `src/app/core`: the theme, the learner's progress and checklist ticks, the generated content files
+  and their route resolvers, scrolling and page titles. Progress and ticks are kept in this browser
+  per account (`user-storage.ts`) and saved to the account in the background (`state-sync.service.ts`,
+  `GET`/`PATCH /api/state`). The header shows whether the latest changes have been saved.
 - `src/app/components`: the screens from before the redesign: Snake (`home`), `login`, `dashboard`,
   `roadmaps` and the old `navbar`.
 - `src/app/services`: API access and the sign-in state (`auth.service.ts`).

@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { InterviewsStore } from '../core/interviews.store';
+import { ProgressStore } from '../core/progress.store';
 import { ThemeService } from '../core/theme.service';
 import { SiteFooterComponent } from './site-footer.component';
 import { SiteHeaderComponent } from './site-header.component';
@@ -27,6 +29,9 @@ import { SiteHeaderComponent } from './site-header.component';
 export class ShellComponent {
   constructor() {
     inject(ThemeService).forceDark(false);
+    // The synced stores, created up front so the account's copy is read for all of them at once.
+    inject(ProgressStore);
+    inject(InterviewsStore);
   }
 
   /**

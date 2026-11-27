@@ -3,9 +3,13 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import type { ContentDoc } from '@lib/content/doc';
 import { ProgressStore } from '../../core/progress.store';
+import { StateSync } from '../../core/state-sync.service';
 import { AuthService } from '../../services/auth.service';
 import { type BodyPage, LessonBodyComponent } from './lesson-body.component';
 
+
+/** These tests are about the widgets, not about saving to the account. */
+const NO_SYNC = { provide: StateSync, useValue: { register: () => {}, changed: () => {} } };
 const DOC: ContentDoc = {
   v: 1,
   toc: [{ id: 'intro', text: 'Intro', depth: 2 }],
@@ -36,7 +40,7 @@ describe('LessonBodyComponent', () => {
   beforeEach(async () => {
     localStorage.clear();
     TestBed.configureTestingModule({
-      providers: [provideRouter([]), { provide: AuthService, useValue: { userId: signal('user-1') } }],
+      providers: [provideRouter([]), { provide: AuthService, useValue: { userId: signal('user-1') } }, NO_SYNC],
     });
     router = TestBed.inject(Router);
     vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);

@@ -252,6 +252,45 @@ Not in 3b:
   - complete button, status picker, bookmarks and flags, "continue where you left off".
 - **Import:** a TheSWEguide backup file (`theswe-guide-backup-*.json`, version 1) is sanitized and merged into the account. Export uses the same format.
 
+Split into three, each with its own review:
+- **5a:** progress and checklist ticks saved to the account.
+- **5b:** the notebook store and revision tools (bookmarks, notes, snippets, saved diagrams, revisit flags), the notebook page, and TheSWEguide backup import and export.
+- **5c:** the progress pages, DSA's coding-question tracker (`/dsa/problems`, `/dsa/problems/:topic`) and its interview notes page.
+
+**Phase 5a (done 2026-11-28, in review): progress saved to the account.**
+- Backend (SkillTracker-Srcv):
+  - `V2__user_state.sql` and the `UserState` entity, as above.
+  - `GET /api/state` returns the user's documents. `PATCH /api/state/{kind}` (`application/merge-patch+json`) applies a merge patch under a row lock and returns the document as stored.
+  - Refused:
+    - an unknown kind (404);
+    - a top-level field the kind doesn't have, or a value that isn't an object (400);
+    - a request over 1 MB (413), or one without a length (411);
+    - a document over 1 MB after the merge (413);
+    - more than 60 saves a minute from one user (429).
+  - Tests:
+    - the RFC 7396 examples;
+    - the endpoint's rules, on H2;
+    - the jsonb column and the cascade on user deletion, on PostgreSQL 18 (Testcontainers).
+- UI:
+  - `StateSync` (`core/state-sync.service.ts`) saves progress and the interviews store (checklist ticks) to the account. The notebook joins it in 5b.
+  - **How changes are tracked:** the plan above collected patches as the stores changed. Instead, each document keeps the server's last copy beside it (`…:synced` in localStorage), and what to send is the difference between the two (`lib/progress/merge-patch.ts`).
+    - A lost or repeated request changes nothing.
+    - A change made while a save is in flight goes out with the next one.
+  - **After sign-in,** the local copy shows at once. The server's copy is then read, with local changes kept on top of it.
+  - **When changes are sent:**
+    - 3 s after the last change;
+    - once more, without waiting for the answer, when the page is hidden or closed (`keepalive`).
+  - **Reading the server's copy again:** a tab that comes back after a minute away does so.
+  - **Retries:** while the backend is asleep or unreachable, saves retry after 3 s, doubling up to a minute.
+  - **The header indicator:** "Saving…" and "Saved" show from 640 px wide; "Offline" and "Not saved" always show.
+  - **Signing out** waits up to 4 s for the last save. If the save didn't get through, it asks first. What wasn't sent stays in this browser and goes out at the next sign-in there.
+- Tests:
+  - the merge-patch helpers (tools tests);
+  - `StateSync`, with fake timers;
+  - an e2e test that marks a lesson complete and sees it in a fresh browser.
+  - The e2e tests use one account per Playwright project and sign each in once per run (`e2e/global-setup.ts`).
+- Deploy the backend first. Until `/api/state` is live, the new UI shows "Offline" and keeps retrying, and progress stays in the browser only. The current backend answers 500 for a path it doesn't have (its catch-all exception handler, Phase 0d), and the UI reads that as unreachable.
+
 ## Phase 6: Mock Interview tab, and removing Dashboard and Roadmaps
 Split into three:
 - **6a:** the Mock Interview tab.
