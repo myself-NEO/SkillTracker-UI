@@ -22,17 +22,27 @@ export class AuthService {
   signedIn = signal<boolean>(false);
   /** Full-screen loader: only while a returning Google sign-in is being completed. */
   loading = signal<boolean>(false);
+  /**
+   * The signed-in account's id (the token's `sub`), known without asking the backend. Per-user data
+   * kept in this browser (progress, notebook) is stored under it.
+   */
+  userId = signal<string | null>(null);
 
   private readonly TOKEN_KEY = 'sde_prep_token';
   // The OAuth state of the Google sign-in this tab started. sessionStorage is per tab and survives
   // the round trip to Google and back.
   private readonly OAUTH_STATE_KEY = 'sde_prep_oauth_state';
+  // The page to open once a Google sign-in this tab started comes back (also per tab).
+  private readonly RETURN_URL_KEY = 'sde_prep_return_url';
   private pendingCheck: Promise<User | null> | null = null;
   private googleSignIn: Promise<void> | null = null;
   private googleSignInError: string | null = null;
   private googleSignInCompleted = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    const token = this.getToken();
+    if (token && !this.isExpired(token)) this.userId.set(this.subjectOf(token));
+  }
 
   getToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY);
@@ -40,7 +50,18 @@ export class AuthService {
 
   setToken(token: string): void {
     localStorage.setItem(this.TOKEN_KEY, token);
+    this.userId.set(this.subjectOf(token));
     this.signedIn.set(true);
+  }
+
+  /** The JWT's `sub` claim (the user id), read without checking the signature; the backend checks that. */
+  private subjectOf(token: string): string | null {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return typeof payload.sub === 'string' ? payload.sub : null;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -58,6 +79,7 @@ export class AuthService {
       await this.logout();
       return false;
     }
+    this.userId.set(this.subjectOf(token));
     this.signedIn.set(true);
     if (!this.currentUser()) {
       void this.checkSession();
@@ -125,6 +147,7 @@ export class AuthService {
   async logout(): Promise<void> {
     localStorage.removeItem(this.TOKEN_KEY);
     this.currentUser.set(null);
+    this.userId.set(null);
     this.signedIn.set(false);
   }
 
@@ -134,15 +157,29 @@ export class AuthService {
    * browser back to this site's root with the result in the URL fragment - see
    * captureGoogleRedirect.
    */
-  async startGoogleSignIn(): Promise<void> {
+  async startGoogleSignIn(returnUrl: string | null = null): Promise<void> {
     const state = this.newOAuthState();
     this.storeOAuthState(state);
+    this.storeSession(this.RETURN_URL_KEY, returnUrl);
     try {
       window.location.assign(await this.getGoogleAuthUrl(state));
     } catch (err) {
       this.storeOAuthState(null);
+      this.storeSession(this.RETURN_URL_KEY, null);
       throw err;
     }
+  }
+
+  /** The page to open after a Google sign-in, as given to startGoogleSignIn. Read once. */
+  takeGoogleReturnUrl(): string | null {
+    let returnUrl: string | null;
+    try {
+      returnUrl = sessionStorage.getItem(this.RETURN_URL_KEY);
+    } catch {
+      return null;
+    }
+    this.storeSession(this.RETURN_URL_KEY, null);
+    return returnUrl;
   }
 
   /**
@@ -241,14 +278,19 @@ export class AuthService {
   }
 
   private storeOAuthState(state: string | null): void {
+    // With storage unavailable, the returning sign-in fails the state check and asks to retry.
+    this.storeSession(this.OAUTH_STATE_KEY, state);
+  }
+
+  private storeSession(key: string, value: string | null): void {
     try {
-      if (state) {
-        sessionStorage.setItem(this.OAUTH_STATE_KEY, state);
+      if (value) {
+        sessionStorage.setItem(key, value);
       } else {
-        sessionStorage.removeItem(this.OAUTH_STATE_KEY);
+        sessionStorage.removeItem(key);
       }
     } catch {
-      // Storage unavailable: the returning sign-in will fail the state check and ask to retry.
+      // Storage unavailable: nothing is remembered across the round trip to Google.
     }
   }
 }

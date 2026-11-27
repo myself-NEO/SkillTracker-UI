@@ -76,11 +76,19 @@ decides where Google sign-in may return.
 
 ## Layout
 
-- `src/app/components`: the screens:
-  - Snake (`home`);
-  - `login`;
-  - `dashboard` and `roadmaps`, which are replaced by the learning app in later phases;
-  - `navbar`.
+- `src/app/app.routes.ts`: the routes, in three frames:
+  - the public pages, always dark (`layouts/game-layout`): Snake (`/home`) and `/login`;
+  - the signed-in app, light or dark (`shell/`): `/learn`, the topic pages (`/java`, `/dsa`, `/lld`,
+    `/hld`) and `/mock-interview`. Signed-out visitors are sent to `/login?returnUrl=…` and come back
+    afterwards;
+  - the old `/dashboard` and `/roadmaps` (`layouts/legacy-layout`), out of the navigation until they
+    are removed (docs/plan.md, Phase 6).
+- `src/app/pages`: the signed-in pages. `src/app/ui`: pieces they share (progress bars and icons,
+  topic glyphs, the hub's map).
+- `src/app/core`: the theme, the learner's progress (kept in this browser per account for now), the
+  generated content files and their route resolvers, scrolling and page titles.
+- `src/app/components`: the screens from before the redesign: Snake (`home`), `login`, `dashboard`,
+  `roadmaps` and the old `navbar`.
 - `src/app/services`: API access and the sign-in state (`auth.service.ts`).
 - `src/app/interceptors`: add the backend origin and the token to `/api` calls, and sign out on a 401.
 - `src/styles.css`: TheSWEguide's design tokens (light and dark), fonts and typography.

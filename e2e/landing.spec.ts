@@ -20,10 +20,25 @@ test('"Log in to hone your skills" opens the login page', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Sign in with Google' })).toBeVisible();
 });
 
-test('pages behind the login send signed-out visitors back to the game', async ({ page }) => {
-  await page.goto('/dashboard');
+test('pages behind the login send signed-out visitors to the login page, remembering the page', async ({ page }) => {
+  await page.goto('/java');
+  await expect(page).toHaveURL(/\/login\?returnUrl=%2Fjava$/);
+
+  await page.goto('/learn');
+  await expect(page).toHaveURL(/\/login$/);
+});
+
+test('unknown pages send signed-out visitors to the game', async ({ page }) => {
+  await page.goto('/no-such-page');
 
   await expect(page).toHaveURL(/\/home$/);
+});
+
+test('the game stays dark when the learning pages are set to light', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('theme', 'light'));
+  await page.goto('/home');
+
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 });
 
 test('a deep link loads the app instead of a 404', async ({ page }) => {

@@ -1,33 +1,26 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { CommonModule } from '@angular/common';
-import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter } from 'rxjs';
-import { NavbarComponent } from './components/navbar/navbar.component';
+import { Router, RouterOutlet } from '@angular/router';
+import { safeReturnUrl } from './core/return-url';
 import { AuthService } from './services/auth.service';
 
+/**
+ * The app's root: each page brings its own frame (see app.routes.ts). Default change detection: the
+ * pages from before the redesign (Snake, login, the old dashboard) update plain fields after async
+ * work, which an OnPush ancestor would never show.
+ */
 @Component({
   selector: 'app-root',
-  standalone: true,
-  imports: [CommonModule, RouterOutlet, NavbarComponent],
+  imports: [RouterOutlet],
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
-  /** The Snake home page keeps its full-screen layout (no navbar) even for signed-in users. */
-  onHome = signal(AppComponent.isHomeUrl(window.location.pathname));
+  protected readonly authService = inject(AuthService);
+  private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
 
-  constructor(public authService: AuthService, private http: HttpClient, private router: Router) {
-    this.router.events
-      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd), takeUntilDestroyed())
-      .subscribe((e) => this.onHome.set(AppComponent.isHomeUrl(e.urlAfterRedirects)));
-  }
-
-  private static isHomeUrl(url: string): boolean {
-    const path = url.split(/[?#]/)[0];
-    return path === '/' || path === '/home';
-  }
+  /** Back from Google and signed in: the loader stays up until the page the visitor wanted is open. */
+  protected readonly redirecting = signal(this.authService.loading());
 
   async ngOnInit(): Promise<void> {
     // The backend sleeps when idle (Render free tier) and takes a while to boot. Wake it up as soon
@@ -37,12 +30,17 @@ export class AppComponent implements OnInit {
 
     await this.authService.ensureSession();
 
-    // Back from Google: signed in -> straight to the dashboard (Google returns to the site root,
-    // which is the Snake page); unsuccessful -> the login page shows why.
-    if (this.authService.takeGoogleSignInCompleted()) {
-      this.router.navigate(['/dashboard']);
-    } else if (this.authService.hasGoogleSignInError()) {
-      this.router.navigate(['/login']);
+    // Back from Google (which returns to the site root, the Snake page): signed in -> on to the
+    // page they were heading for; unsuccessful -> the login page shows why.
+    const returnUrl = this.authService.takeGoogleReturnUrl();
+    try {
+      if (this.authService.takeGoogleSignInCompleted()) {
+        await this.router.navigateByUrl(safeReturnUrl(returnUrl));
+      } else if (this.authService.hasGoogleSignInError()) {
+        await this.router.navigate(['/login'], { queryParams: returnUrl ? { returnUrl } : {} });
+      }
+    } finally {
+      this.redirecting.set(false);
     }
   }
 }
