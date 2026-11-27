@@ -171,7 +171,7 @@ How the design hides Render's cold start:
 - **Local stores** (moved here from Phase 4): TheSWEguide's stores ported to signals, local-only and per user. Bookmarks and copy-to-snippet need them already.
 - **Lesson loading:** a route resolver fetches the lesson JSON (LRU cache, prev/next prefetched when idle) and re-applies `#fragment` after mounting. Event delegation runs outside the zone. Content files live under a build-hash path with immutable caching.
 
-**Phase 3a (done 2026-11-27, in review):**
+**Phase 3a (done 2026-11-27, committed):**
 - The routes, guards and return URLs above.
 - The signed-in shell: a header with the topics, Mock Interview, a theme toggle (in the account menu on phones) and an account menu, plus a footer.
 - `/learn` and the four topic roadmaps, ported from TheSWEguide. Progress is per account in this browser (`st:<userId>:learning-progress-v1`).
@@ -180,7 +180,27 @@ How the design hides Render's cold start:
 - `index.json` carries each topic's lesson slugs, so the hub needs no curriculum file.
 - AppComponent and the dark layouts keep default change detection: the screens from before the redesign update plain fields after async work.
 
-Left for **Phase 3b**: lessons, problems and cheat sheets (the reader), search and Mermaid.
+**Phase 3b (done 2026-11-27, in review):**
+- Lesson pages (`/:topic/:lesson`):
+  - the curriculum sidebar (a drawer on phones), "On this page" with scroll spy (a menu on smaller screens), and the meta pills;
+  - what the lesson covers and what to read first, "Mark as complete", previous and next, and related lessons;
+  - opening a lesson and reading through it moves the topic's resume point.
+- Java, LLD and HLD practice: the library (`/:topic/problems`, search and filters) and problem pages (status picker; opening a hint or solution marks the problem started).
+- DSA cheat sheets (`/dsa/cheatsheets/:slug`).
+- The body renderer (`pages/article/lesson-body`):
+  - It sets the build's HTML as is, since it is trusted build output.
+  - Copy buttons work, and links to app pages and #sections go through the router.
+  - Mermaid diagrams are drawn near the viewport, redrawn on theme change, with step-through and expand.
+  - Other widgets show an "on its way" note until Phase 4.
+- ⌘K search over `/search-index.json`.
+- Section links (#id) scroll with the browser's `scrollIntoView`, so each element's `scroll-margin-top` is kept.
+- `strictTemplates` is on.
+- `track.json` lists the problems with a written breakdown (`writtenProblems`).
+
+Not in 3b:
+- DSA's coding-question tracker (`/dsa/problems`) needs the notebook store, so it moves to Phase 5 with the notebooks and the progress pages.
+- Interview prep stays in Phase 6, and the estimator page in Phase 4.
+- Until then, those URLs show "This page is on its way".
 
 ## Phase 4: interactive widgets and animations
 - **Widgets:** Quiz, Drill, Checklist, Estimator, hint/reveal tracking, copy button.
@@ -188,6 +208,30 @@ Left for **Phase 3b**: lessons, problems and cheat sheets (the reader), search a
 - **Animation engine:** ScenePlayer's three modes (stepper, loop, scroll-driven), with reduced motion, captions and the code panel, plus the 7 scene views.
   - motion's `layoutId` is replaced by a small FLIP directive built on the Web Animations API.
   - The `/visualize` gallery and scene pages; `viz` and `scrolly` fences inside lessons.
+
+**Phase 4a (done 2026-11-27, in review): the widgets.**
+- Quiz:
+  - A wrong option says why; you can show the answer, and reset.
+  - On lessons, every choice is recorded, and answering all correctly marks the knowledge check passed. On other pages it is practice only.
+- Drill: reads estimates like 1.2K/s or 40 GB and says how far off they are; answers on lessons are recorded with the quiz answers.
+- Checklist: ticks are kept per page in the new interviews store (`st:<userId>:learning-interviews-v1`); on cheat sheets they last for the visit.
+- Estimator, in lessons and on `/hld/estimator` (with the latency and conversion tables).
+- `UserStorage` (`core/user-storage.ts`) keeps any state per account. ProgressStore and the new InterviewsStore use it.
+- `lib/progress/interviews.ts` has TheSWEguide's interviews model: the types, sanitizing and checklist updates. The session updates come with the mock interviews in Phase 6.
+- Animations (`viz` and `scrolly`) still show "on its way" until **Phase 4b**: the animation engine, the scenes, `/visualize`, and the hub's animation showcase.
+
+**Phase 4b (done 2026-11-27, in review): the animations.**
+- The scene player (`src/app/viz`) has TheSWEguide's three modes:
+  - stepper: play/pause, step, slider, speed, keyboard, the scene's code with the current line, and "Try your own input" for the sliding window;
+  - loop: plays while on screen, unless the visitor prefers reduced motion;
+  - scroll-driven: the frame follows the step being read.
+- Each frame keeps the height of the scene's tallest frame (measured from invisible copies), and scenes lay themselves out with container queries.
+- The 7 scene views are ported.
+- Motion's `layoutId` is replaced by FLIP directives on the Web Animations API (`viz/motion.ts`). Elements entering and leaving use Angular's `animate.enter` / `animate.leave` with the `.viz-*` keyframes in `styles.css`. With reduced motion nothing animates.
+- In lessons the player and the scenes load separately (`@defer`), so lessons without animations don't download them.
+- `/visualize` (the gallery) and `/visualize/:scene` (a scene on its own) read `public/content/visualize.json`. The build writes it: each scene with its default parameters and its code, highlighted.
+- The hub has the load-balancer animation showcase. The footer links to the gallery.
+- Angular's runtime for `@defer` and enter/leave animations adds about 6 KB (gzipped) to the first download.
 
 ## Phase 5: progress tied to the account (both repos)
 - **Backend:**

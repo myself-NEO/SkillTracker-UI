@@ -20,7 +20,7 @@ const minutesOf = (lessons: readonly { minutes: number }[]) => lessons.reduce((n
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <section [id]="anchor()" [attr.aria-labelledby]="anchor() + '-title'">
+    <section [id]="anchor()" [attr.aria-labelledby]="anchor() + '-title'" class="scroll-mt-20">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div class="flex items-center gap-4">
           <span

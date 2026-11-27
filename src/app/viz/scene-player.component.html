@@ -1,0 +1,169 @@
+<ng-template #playPause let-playing>
+  @if (playing) {
+    <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <rect x="5.5" y="4.5" width="3" height="11" rx="1" />
+      <rect x="11.5" y="4.5" width="3" height="11" rx="1" />
+    </svg>
+  } @else {
+    <svg class="size-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M6.5 4.5v11l9-5.5z" /></svg>
+  }
+</ng-template>
+
+<ng-template #icon let-path>
+  <svg
+    class="size-4"
+    viewBox="0 0 20 20"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path [attr.d]="path" />
+  </svg>
+</ng-template>
+
+@if (frame(); as frame) {
+  @switch (viz().mode) {
+    @case ('loop') {
+      <figure
+        #loopFigure
+        class="not-prose my-8 overflow-hidden rounded-xl border border-border bg-surface"
+        data-viz="loop"
+        [attr.data-playing]="loopPlaying()"
+      >
+        <figcaption class="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
+          <span class="text-xs font-semibold tracking-wider text-muted uppercase">{{ viz().title }}</span>
+          <button
+            type="button"
+            (click)="toggleLoop()"
+            class="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted hover:bg-surface-2 hover:text-fg"
+            [attr.aria-label]="loopPlaying() ? 'Pause the animation' : 'Play the animation'"
+          >
+            <ng-container *ngTemplateOutlet="playPause; context: { $implicit: loopPlaying() }" />
+            {{ loopPlaying() ? 'Pause' : 'Play' }}
+          </button>
+        </figcaption>
+        <div class="overflow-x-auto px-4 py-5">
+          <app-scene-frame [scene]="viz().scene" [frames]="frames()" [frame]="frame" />
+        </div>
+        <p class="border-t border-border bg-bg px-4 py-3 text-sm leading-6 text-fg">{{ frame.caption }}</p>
+      </figure>
+    }
+
+    @case ('scrolly') {
+      <section
+        class="not-prose my-10 grid gap-x-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]"
+        [attr.aria-label]="viz().title"
+        data-viz="scrolly"
+      >
+        <div #scrollyScene class="sticky top-[6.5rem] z-10 self-start lg:top-24 lg:order-last">
+          <figure class="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+            <figcaption class="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
+              <span class="text-xs font-semibold tracking-wider text-muted uppercase">{{ viz().title }}</span>
+              <span class="text-xs text-muted tabular-nums">{{ at() + 1 }} / {{ frames().length }}</span>
+            </figcaption>
+            <div class="max-h-[50vh] overflow-auto px-4 py-4 lg:max-h-none">
+              <app-scene-frame [scene]="viz().scene" [frames]="frames()" [frame]="frame" />
+            </div>
+            <!-- On narrow screens the step text below says the same, so the caption is only announced. -->
+            <p class="border-t border-border bg-bg px-4 py-2.5 text-sm text-fg max-lg:sr-only" aria-live="polite">
+              {{ frame.caption }}
+            </p>
+          </figure>
+        </div>
+        <div class="relative">
+          @for (step of steps(); track $index; let index = $index) {
+            <div
+              [attr.data-step]="index"
+              [attr.data-active]="index === at() ? '' : null"
+              class="flex min-h-[70vh] items-center py-8 first:min-h-[45vh] last:min-h-[55vh]"
+            >
+              <div
+                #stepCard
+                class="prose prose-sm max-w-none rounded-xl border bg-surface p-5 transition-colors [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+                [class]="index === at() ? 'border-accent/50 shadow-sm' : 'border-border'"
+                [innerHTML]="step"
+              ></div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    @default {
+      <figure
+        class="not-prose my-8 overflow-hidden rounded-xl border border-border bg-surface focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
+        tabindex="0"
+        (keydown)="onKeys($event)"
+        [attr.aria-label]="viz().title + ': animation. Space plays or pauses; the arrow keys step.'"
+        data-viz="stepper"
+      >
+        <figcaption class="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
+          <span class="text-xs font-semibold tracking-wider text-muted uppercase">{{ viz().title }}</span>
+          <span class="text-xs text-muted tabular-nums">Step {{ at() + 1 }} of {{ frames().length }}</span>
+        </figcaption>
+        <div [class]="viz().code ? 'grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)]' : ''">
+          <div class="min-w-0 overflow-x-auto px-4 py-5">
+            <app-scene-frame [scene]="viz().scene" [frames]="frames()" [frame]="frame" />
+          </div>
+          @if (viz().code; as code) {
+            <app-code-panel [code]="code" [line]="frame.line" />
+          }
+        </div>
+        <p class="min-h-[3.25rem] border-t border-border bg-bg px-4 py-3 text-sm leading-6 text-fg" aria-live="polite">
+          {{ frame.caption }}
+        </p>
+        <div class="flex flex-wrap items-center gap-2 border-t border-border px-4 py-3">
+          <button type="button" class="viz-control" (click)="go(0)" aria-label="Restart">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: icons.restart }" />
+          </button>
+          <button type="button" class="viz-control" (click)="go(at() - 1)" [disabled]="at() === 0" aria-label="Previous step">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: icons.prev }" />
+          </button>
+          <button
+            type="button"
+            class="grid size-9 shrink-0 place-items-center rounded-lg bg-accent text-accent-fg hover:opacity-90"
+            (click)="toggle()"
+            [attr.aria-label]="playing() ? 'Pause' : 'Play'"
+          >
+            <ng-container *ngTemplateOutlet="playPause; context: { $implicit: playing() }" />
+          </button>
+          <button type="button" class="viz-control" (click)="go(at() + 1)" [disabled]="at() === last()" aria-label="Next step">
+            <ng-container *ngTemplateOutlet="icon; context: { $implicit: icons.next }" />
+          </button>
+          <input
+            type="range"
+            min="0"
+            [max]="last()"
+            [value]="at()"
+            (input)="onSlider($event)"
+            aria-label="Step"
+            class="mx-1 min-w-24 flex-1 accent-accent"
+          />
+          <label class="flex items-center gap-1.5 text-xs text-muted">
+            Speed
+            <select (change)="onSpeed($event)" class="rounded-md border border-border bg-bg px-1.5 py-1 text-xs text-fg">
+              @for (option of speeds; track option) {
+                <option [value]="option" [selected]="option === speed()">{{ option }}×</option>
+              }
+            </select>
+          </label>
+        </div>
+        @if (viz().scene === 'sliding-window') {
+          <details class="group border-t border-border">
+            <summary
+              class="cursor-pointer list-none px-4 py-2.5 text-sm font-medium text-accent hover:bg-surface-2 [&::-webkit-details-marker]:hidden"
+            >
+              Try your own input
+            </summary>
+            <div class="px-4 pb-4">
+              <app-sliding-window-editor [params]="$any(params())" (changed)="applyParams($event)" />
+            </div>
+          </details>
+        }
+      </figure>
+    }
+  }
+}

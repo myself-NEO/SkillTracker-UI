@@ -7,6 +7,10 @@ import { LearningMapComponent } from '../../ui/learning-map.component';
 import { LessonsProgressComponent } from '../../ui/lessons-progress.component';
 import { LoadErrorComponent } from '../../ui/load-error.component';
 import { TopicGlyphComponent } from '../../ui/topic-glyph.component';
+import type { VizSpec } from '../../viz/scene-player.component';
+import { VizWidgetComponent } from '../../viz/viz-widget.component';
+import { LOAD_BALANCER_DEFAULTS } from '@lib/viz/scenes/load-balancer/logic';
+import { SCENES, sceneInfo } from '@lib/viz/registry';
 
 /** The hub's headline (TheSWEguide's). */
 const HEADLINE = 'Java, algorithms and system design, one concept at a time';
@@ -29,10 +33,17 @@ const STEPS = [
   },
 ];
 
+/** The hub's animation: the load balancer from its lesson, on a loop. */
+const SHOWCASE: VizSpec = {
+  scene: 'load-balancer',
+  title: sceneInfo('load-balancer')!.title,
+  mode: 'loop',
+  params: LOAD_BALANCER_DEFAULTS,
+};
+
 /**
- * /learn, where signing in lands: the four topics with their size and the learner's progress, and
- * a link back to the lesson they last read. Ported from TheSWEguide's homepage; its animation
- * showcase follows with the animations (docs/plan.md, Phase 4).
+ * /learn, where signing in lands: the four topics with their size and the learner's progress, a
+ * link back to the lesson they last read, and an animation. Ported from TheSWEguide's homepage.
  */
 @Component({
   selector: 'app-learn-page',
@@ -43,6 +54,7 @@ const STEPS = [
     ContinueAnywhereComponent,
     LearningMapComponent,
     LoadErrorComponent,
+    VizWidgetComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './learn-page.component.html',
@@ -53,6 +65,8 @@ export class LearnPageComponent {
 
   protected readonly headline = HEADLINE;
   protected readonly steps = STEPS;
+  protected readonly showcase = SHOWCASE;
+  protected readonly sceneCount = SCENES.length;
   protected readonly topics = computed(() => this.index()?.topics ?? []);
   protected readonly totals = computed(() =>
     this.topics().reduce(

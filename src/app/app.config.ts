@@ -42,9 +42,9 @@ import { provideLucideIcons,
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    // Route data and resolved files reach the pages as inputs; #anchors scroll into view
-    // (page-to-page scrolling is provideAppScrolling's).
-    provideRouter(routes, withComponentInputBinding(), withInMemoryScrolling({ anchorScrolling: 'enabled' })),
+    // Route data and resolved files reach the pages as inputs. The router reports page changes
+    // and #anchors; provideAppScrolling does the scrolling.
+    provideRouter(routes, withComponentInputBinding(), withInMemoryScrolling()),
     provideAppScrolling(),
     { provide: TitleStrategy, useClass: AppTitleStrategy },
     provideHttpClient(withFetch(), withInterceptors([unauthorizedInterceptor, authInterceptor, apiBaseUrlInterceptor])),

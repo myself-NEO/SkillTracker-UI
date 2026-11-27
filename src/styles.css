@@ -291,6 +291,78 @@
   }
 }
 
+/* The small buttons in a diagram's toolbar (pages/article/mermaid-diagram). */
+@layer components {
+  .mermaid-tool {
+    @apply inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted transition-colors hover:bg-surface-3 hover:text-fg focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent;
+  }
+}
+
+/* The animations (src/app/viz): the player's control buttons, and how scene elements enter and
+   leave (Angular's animate.enter / animate.leave). With reduced motion nothing animates, and
+   Angular then adds and removes elements at once. */
+@layer components {
+  .viz-control {
+    @apply grid size-9 shrink-0 place-items-center rounded-lg border border-border bg-bg text-fg-soft transition-colors hover:border-border-strong hover:text-fg disabled:opacity-40 disabled:hover:border-border;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .viz-pop-in {
+    animation: viz-pop-in 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .viz-fade-in {
+    animation: viz-fade 400ms ease-out;
+  }
+  .viz-fade-out {
+    animation: viz-fade 250ms ease-in reverse forwards;
+  }
+  .viz-slide-in {
+    animation: viz-slide 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .viz-slide-out {
+    animation: viz-slide 250ms ease-in reverse forwards;
+  }
+  .viz-grow-x {
+    animation: viz-grow-x 500ms ease-out;
+  }
+  .viz-draw {
+    stroke-dasharray: 1;
+    animation: viz-draw 900ms ease-in-out both;
+  }
+}
+
+@keyframes viz-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+@keyframes viz-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes viz-slide {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+@keyframes viz-grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes viz-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 /* Thin translucent scrollbars, as before (they suit the dark screens). */
 @layer utilities {
   ::-webkit-scrollbar {

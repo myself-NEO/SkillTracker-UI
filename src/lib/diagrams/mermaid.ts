@@ -47,3 +47,73 @@ export const diagramType = (source: string) => {
       ?.trim() ?? '';
   return first.split(/\s+/)[0];
 };
+
+/**
+ * Mermaid's colours for each theme. Mermaid derives shades from these, so they are colour values
+ * rather than CSS variables; each set matches the site's tokens for its theme.
+ */
+export const MERMAID_THEME_VARIABLES: Record<Theme, Record<string, string | boolean>> = {
+  light: {
+    darkMode: false,
+    background: '#f3f5f9',
+    primaryColor: '#ffffff',
+    primaryTextColor: '#0d1526',
+    primaryBorderColor: '#8591a5',
+    secondaryColor: '#eef1f6',
+    tertiaryColor: '#f6f8fb',
+    lineColor: '#586579',
+    textColor: '#2c384d',
+    edgeLabelBackground: '#f3f5f9',
+    clusterBkg: '#f6f8fb',
+    clusterBorder: '#c5cdda',
+    noteBkgColor: '#fdf2e1',
+    noteTextColor: '#2c384d',
+    noteBorderColor: '#e2b77a',
+    actorBkg: '#ffffff',
+    actorBorder: '#0369a1',
+    actorTextColor: '#0d1526',
+    actorLineColor: '#8591a5',
+    signalColor: '#586579',
+    signalTextColor: '#0d1526',
+    labelBoxBkgColor: '#eef1f6',
+    labelBoxBorderColor: '#8591a5',
+    labelTextColor: '#0d1526',
+    loopTextColor: '#2c384d',
+    activationBkgColor: '#e2e7ef',
+    activationBorderColor: '#8591a5',
+    sequenceNumberColor: '#ffffff',
+  },
+  dark: {
+    darkMode: true,
+    background: '#0c1324',
+    primaryColor: '#1e293b',
+    primaryTextColor: '#e2e8f0',
+    primaryBorderColor: '#475569',
+    secondaryColor: '#172033',
+    tertiaryColor: '#0b1220',
+    lineColor: '#64748b',
+    textColor: '#cbd5e1',
+    edgeLabelBackground: '#0c1324',
+    clusterBkg: '#0b1220',
+    clusterBorder: '#334155',
+    noteBkgColor: '#1e293b',
+    noteTextColor: '#e2e8f0',
+    noteBorderColor: '#475569',
+    actorBkg: '#1e293b',
+    actorBorder: '#38bdf8',
+    actorTextColor: '#e2e8f0',
+    actorLineColor: '#475569',
+    signalColor: '#94a3b8',
+    signalTextColor: '#e2e8f0',
+    labelBoxBkgColor: '#1e293b',
+    labelBoxBorderColor: '#475569',
+    labelTextColor: '#e2e8f0',
+    loopTextColor: '#cbd5e1',
+    activationBkgColor: '#334155',
+    activationBorderColor: '#64748b',
+    sequenceNumberColor: '#0f172a',
+  },
+};
+
+/** Colour of the message or edge being stepped through. */
+export const MERMAID_STEP_COLOR: Record<Theme, string> = { light: '#0284c7', dark: '#38bdf8' };

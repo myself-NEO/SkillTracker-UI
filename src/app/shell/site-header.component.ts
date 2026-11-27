@@ -2,21 +2,22 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TOPICS } from '@lib/topics';
 import { AccountMenuComponent } from './account-menu.component';
+import { SearchComponent } from './search.component';
 import { ThemeToggleComponent } from './theme-toggle.component';
 
-/** The signed-in header: the brand, the four topics and Mock Interview, the theme switch and the account. */
+/** The signed-in header: the brand, the four topics and Mock Interview, search, the theme switch and the account. */
 @Component({
   selector: 'app-site-header',
-  imports: [RouterLink, RouterLinkActive, ThemeToggleComponent, AccountMenuComponent],
+  imports: [RouterLink, RouterLinkActive, SearchComponent, ThemeToggleComponent, AccountMenuComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="sticky top-0 z-40 border-b border-border bg-bg/85 backdrop-blur-md">
-      <div class="mx-auto flex h-14 w-full max-w-[90rem] items-center gap-3 px-4 sm:gap-8 sm:px-6">
+      <div class="mx-auto flex h-14 w-full max-w-[90rem] items-center gap-2 px-4 sm:gap-8 sm:px-6">
         <a routerLink="/learn" class="flex shrink-0 items-center gap-2.5 rounded-md" aria-label="NeoLevelUP: all topics">
           <img src="assets/logo.svg" alt="" class="size-7" />
           <span class="hidden font-display text-[1.05rem] font-bold tracking-tight text-fg sm:inline">NeoLevelUP</span>
         </a>
-        <nav aria-label="Main" class="flex min-w-0 items-center gap-0.5 overflow-x-auto">
+        <nav aria-label="Main" class="flex min-w-0 items-center overflow-x-auto sm:gap-0.5">
           @for (topic of topics; track topic.id) {
             <a
               [routerLink]="'/' + topic.id"
@@ -25,7 +26,7 @@ import { ThemeToggleComponent } from './theme-toggle.component';
               [attr.aria-current]="topicLink.isActive ? 'page' : null"
               [attr.data-track]="topic.id"
               [title]="topic.title"
-              class="flex shrink-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium transition-colors sm:gap-2 sm:px-2.5"
+              class="flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1.5 text-[13px] font-medium transition-colors sm:gap-2 sm:px-2.5 sm:text-sm"
               [class.bg-accent-soft]="topicLink.isActive"
               [class.text-fg]="topicLink.isActive"
               [class.text-muted]="!topicLink.isActive"
@@ -42,7 +43,7 @@ import { ThemeToggleComponent } from './theme-toggle.component';
             #mockLink="routerLinkActive"
             [attr.aria-current]="mockLink.isActive ? 'page' : null"
             title="Mock interviews"
-            class="flex shrink-0 items-center rounded-md px-2 py-1.5 text-sm font-medium whitespace-nowrap transition-colors sm:px-2.5"
+            class="flex shrink-0 items-center rounded-md px-1.5 py-1.5 text-[13px] font-medium whitespace-nowrap transition-colors sm:px-2.5 sm:text-sm"
             [class.bg-surface-2]="mockLink.isActive"
             [class.text-fg]="mockLink.isActive"
             [class.text-muted]="!mockLink.isActive"
@@ -54,6 +55,7 @@ import { ThemeToggleComponent } from './theme-toggle.component';
           </a>
         </nav>
         <div class="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+          <app-search />
           <!-- On phones the theme switch is in the account menu, which leaves room for the tabs. -->
           <app-theme-toggle class="hidden sm:block" />
           <app-account-menu />
