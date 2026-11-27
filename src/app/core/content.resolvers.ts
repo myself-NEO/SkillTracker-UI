@@ -4,7 +4,7 @@ import { CanMatchFn, ResolveFn } from '@angular/router';
 import type { Cheatsheet } from '@content/dsa/cheatsheets';
 import { findLesson, flattenLessons, type LessonLocation } from '@content/shared/curriculum';
 import type { ProblemMeta } from '@content/shared/types';
-import type { ContentIndex, DsaPractice, TrackFile } from '@lib/content/catalog';
+import type { ContentIndex, DsaPractice, TrackFile, VisualizeIndex } from '@lib/content/catalog';
 import type { ContentDoc } from '@lib/content/doc';
 import { practiceCopy } from '@lib/content/practice';
 import { RESERVED_SEGMENTS } from '@lib/routes';
@@ -31,6 +31,22 @@ export const dsaPracticeResolver: ResolveFn<DsaPractice | null> = () =>
   inject(ContentService)
     .dsaPractice()
     .catch(() => null);
+
+export const visualizeResolver: ResolveFn<VisualizeIndex | null> = () =>
+  inject(ContentService)
+    .visualize()
+    .catch(() => null);
+
+/** "Consistent hashing on a ring · Animations" */
+export const sceneTitleResolver: ResolveFn<string> = async (route) => {
+  try {
+    const { scenes } = await inject(ContentService).visualize();
+    const scene = scenes.find((candidate) => candidate.id === route.paramMap.get('scene'));
+    return scene ? `${scene.title} · Animations` : 'Page not found';
+  } catch {
+    return 'Animations';
+  }
+};
 
 /** What a page resolver found: the page, no such page (shown as a 404), or a failed download. */
 export type PageResult<T> = { status: 'ok'; value: T } | { status: 'missing' } | { status: 'error' };

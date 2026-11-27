@@ -87,6 +87,27 @@ test.describe('reading (needs the local backend)', () => {
     await expect(perDay).toHaveText('1B');
   });
 
+  test('the gallery opens an animation that steps frame by frame', async ({ page }) => {
+    await page.goto('/visualize');
+    await page.getByRole('link', { name: 'HashMap.put, step by step' }).click();
+    await expect(page).toHaveURL(/\/visualize\/hashmap-put$/);
+    const player = page.locator('figure[data-viz="stepper"]');
+    await expect(player.getByText(/^Step 1 of \d+$/)).toBeVisible();
+    await player.getByRole('button', { name: 'Next step' }).click();
+    await expect(player.getByText(/^Step 2 of \d+$/)).toBeVisible();
+  });
+
+  test('a scroll-driven animation in a lesson follows the text being read', async ({ page }) => {
+    await page.goto('/java/garbage-collection-basics');
+    const explainer = page.locator('section[data-viz="scrolly"]');
+    await expect(explainer).toBeVisible();
+    await explainer
+      .locator('[data-step]')
+      .nth(3)
+      .evaluate((step) => step.scrollIntoView({ block: 'center', behavior: 'instant' }));
+    await expect(explainer.locator('figcaption')).toContainText('4 / 6');
+  });
+
   test('pages not ported yet say so', async ({ page }) => {
     await page.goto('/java/notebook');
     await expect(page.getByRole('heading', { level: 1, name: 'This page is on its way' })).toBeVisible();

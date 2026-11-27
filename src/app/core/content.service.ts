@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import type { ContentIndex, DsaPractice, TrackFile } from '@lib/content/catalog';
+import type { ContentIndex, DsaPractice, TrackFile, VisualizeIndex } from '@lib/content/catalog';
 import type { ContentDoc } from '@lib/content/doc';
 import type { TopicId } from '@lib/topics';
 
@@ -32,6 +32,11 @@ export class ContentService {
   /** DSA's coding-question list (by practice topic) and its cheat sheets. */
   dsaPractice(): Promise<DsaPractice> {
     return this.cached(this.catalog, '/content/dsa/practice.json');
+  }
+
+  /** The animation gallery's scenes. */
+  visualize(): Promise<VisualizeIndex> {
+    return this.cached(this.catalog, '/content/visualize.json');
   }
 
   lesson(topic: TopicId, slug: string): Promise<ContentDoc> {

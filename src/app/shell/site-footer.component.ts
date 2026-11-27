@@ -26,6 +26,7 @@ import { TOPICS } from '@lib/topics';
                 <a [routerLink]="'/' + topic.id" class="text-muted transition-colors hover:text-fg">{{ topic.title }}</a>
               </li>
             }
+            <li><a routerLink="/visualize" class="text-muted transition-colors hover:text-fg">Animations</a></li>
             <li><a routerLink="/mock-interview" class="text-muted transition-colors hover:text-fg">Mock interviews</a></li>
           </ul>
         </nav>

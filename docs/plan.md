@@ -220,6 +220,19 @@ Not in 3b:
 - `lib/progress/interviews.ts` has TheSWEguide's interviews model: the types, sanitizing and checklist updates. The session updates come with the mock interviews in Phase 6.
 - Animations (`viz` and `scrolly`) still show "on its way" until **Phase 4b**: the animation engine, the scenes, `/visualize`, and the hub's animation showcase.
 
+**Phase 4b (done 2026-11-27, in review): the animations.**
+- The scene player (`src/app/viz`) has TheSWEguide's three modes:
+  - stepper: play/pause, step, slider, speed, keyboard, the scene's code with the current line, and "Try your own input" for the sliding window;
+  - loop: plays while on screen, unless the visitor prefers reduced motion;
+  - scroll-driven: the frame follows the step being read.
+- Each frame keeps the height of the scene's tallest frame (measured from invisible copies), and scenes lay themselves out with container queries.
+- The 7 scene views are ported.
+- Motion's `layoutId` is replaced by FLIP directives on the Web Animations API (`viz/motion.ts`). Elements entering and leaving use Angular's `animate.enter` / `animate.leave` with the `.viz-*` keyframes in `styles.css`. With reduced motion nothing animates.
+- In lessons the player and the scenes load separately (`@defer`), so lessons without animations don't download them.
+- `/visualize` (the gallery) and `/visualize/:scene` (a scene on its own) read `public/content/visualize.json`. The build writes it: each scene with its default parameters and its code, highlighted.
+- The hub has the load-balancer animation showcase. The footer links to the gallery.
+- Angular's runtime for `@defer` and enter/leave animations adds about 6 KB (gzipped) to the first download.
+
 ## Phase 5: progress tied to the account (both repos)
 - **Backend:**
   - Flyway `V2__user_state.sql`: `user_state(user_id fk → users on delete cascade, kind check in ('progress','notebook','interviews'), data jsonb, updated_at)`, with PK (user_id, kind).

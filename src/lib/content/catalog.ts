@@ -2,7 +2,8 @@ import type { Cheatsheet } from '@content/dsa/cheatsheets';
 import type { LeetCodeProblem } from '@content/dsa/problems';
 import type { PracticeTopic } from '@content/dsa/practiceTopics';
 import type { Track } from '@content/shared/types';
-import type { Topic } from '@lib/topics';
+import type { Topic, TopicId } from '@lib/topics';
+import type { SceneCode, VizMode } from '@lib/viz/types';
 import type { topicStats } from './stats';
 
 // Shapes of the catalog files the content build writes (tools/content/build.ts) and the app reads.
@@ -37,4 +38,25 @@ export interface DsaPractice {
   topics: PracticeTopic[];
   problems: LeetCodeProblem[];
   cheatsheets: Cheatsheet[];
+}
+
+/** An animation in the gallery (public/content/visualize.json), ready to play on its own. */
+export interface VisualizeScene {
+  id: string;
+  title: string;
+  summary: string;
+  topic: TopicId;
+  /** Ways it can be played; the first is how its lesson plays it. */
+  modes: VizMode[];
+  /** The lesson it is embedded in. */
+  lesson?: { title: string; href: string };
+  /** The scene's default parameters (checked at build time). */
+  params: object;
+  /** Code shown beside it in step-through mode, highlighted at build time. */
+  code?: SceneCode;
+}
+
+/** public/content/visualize.json */
+export interface VisualizeIndex {
+  scenes: VisualizeScene[];
 }

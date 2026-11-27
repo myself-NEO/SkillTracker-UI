@@ -14,7 +14,9 @@ import {
   libraryTitleResolver,
   problemResolver,
   problemTitleResolver,
+  sceneTitleResolver,
   trackResolver,
+  visualizeResolver,
 } from './core/content.resolvers';
 import { GameLayoutComponent } from './layouts/game-layout.component';
 
@@ -98,6 +100,18 @@ export const routes: Routes = [
         title: 'All topics',
         resolve: { index: contentIndexResolver },
         loadComponent: () => import('./pages/learn/learn-page.component').then((m) => m.LearnPageComponent),
+      },
+      {
+        path: 'visualize',
+        title: 'Animations',
+        resolve: { index: visualizeResolver },
+        loadComponent: () => import('./pages/visualize/gallery-page.component').then((m) => m.GalleryPageComponent),
+      },
+      {
+        path: 'visualize/:scene',
+        title: sceneTitleResolver,
+        resolve: { index: visualizeResolver },
+        loadComponent: () => import('./pages/visualize/scene-page.component').then((m) => m.ScenePageComponent),
       },
       {
         path: 'mock-interview',

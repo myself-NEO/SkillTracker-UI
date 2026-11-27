@@ -25,8 +25,8 @@ import { DrillComponent } from '../../widgets/drill.component';
 import { EstimatorComponent } from '../../widgets/estimator.component';
 import type { BodyPage } from '../../widgets/page';
 import { QuizComponent } from '../../widgets/quiz.component';
+import { VizWidgetComponent } from '../../viz/viz-widget.component';
 import { MermaidDiagramComponent } from './mermaid-diagram.component';
-import { WidgetSoonComponent } from './widget-soon.component';
 
 export type { BodyPage };
 
@@ -139,9 +139,8 @@ export class LessonBodyComponent {
           ...options,
           bindings: [inputBinding('title', () => widget.title), inputBinding('preset', () => widget.preset)],
         });
-      default:
-        // Animations arrive with the animation engine (docs/plan.md, Phase 4b).
-        return createComponent(WidgetSoonComponent, { ...options, bindings: [inputBinding('kind', () => widget.type)] });
+      case 'viz':
+        return createComponent(VizWidgetComponent, { ...options, bindings: [inputBinding('viz', () => widget)] });
     }
   }
 

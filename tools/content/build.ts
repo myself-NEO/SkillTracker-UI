@@ -7,6 +7,7 @@
 //   public/content/<topic>/problems/<slug>.json         a problem breakdown (ContentDoc)
 //   public/content/dsa/cheatsheets/<slug>.json          a DSA cheat sheet (ContentDoc)
 //   public/content/dsa/practice.json                   the DSA coding-question list and cheat sheet index
+//   public/content/visualize.json                      the animation gallery's scenes
 //   public/search-index.json                          the ⌘K search index
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -16,12 +17,15 @@ import { CHEATSHEETS } from '@content/dsa/cheatsheets';
 import { LEETCODE_PROBLEMS } from '@content/dsa/problems';
 import { PRACTICE_TOPICS } from '@content/dsa/practiceTopics';
 import { hasProblemBody } from '@content/shared/loaders';
-import type { ContentIndex, IndexTopic, TrackFile } from '@lib/content/catalog';
+import type { ContentIndex, IndexTopic, TrackFile, VisualizeIndex } from '@lib/content/catalog';
 import type { ContentDoc } from '@lib/content/doc';
 import { topicStats } from '@lib/content/stats';
-import { flattenLessons, TRACKS } from '@lib/content/tracks';
+import { findLesson, flattenLessons, TRACKS } from '@lib/content/tracks';
 import { TOPIC_IDS, TOPICS } from '@lib/topics';
+import { SCENES } from '@lib/viz/registry';
+import { parseSceneParams } from '@lib/viz/schemas';
 import { countSlugs, writeManifest } from './manifest';
+import { highlightLines } from './highlight';
 import { CONTENT_DIR, OUT_DIR, rel, ROOT, SEARCH_INDEX_FILE } from './paths';
 import { renderDoc } from './pipeline';
 import { buildSearchIndex } from './search-index';
@@ -110,6 +114,25 @@ for (const sheet of CHEATSHEETS) {
   await renderTo(path.join(OUT_DIR, 'dsa', 'cheatsheets', `${sheet.slug}.json`), read('dsa', 'cheatsheets', `${sheet.slug}.md`), TRACKS.dsa.basePath);
 }
 write(path.join(OUT_DIR, 'dsa', 'practice.json'), { topics: PRACTICE_TOPICS, problems: LEETCODE_PROBLEMS, cheatsheets: CHEATSHEETS });
+
+// The animation gallery: every scene with its default parameters and highlighted code.
+const visualize: VisualizeIndex = { scenes: [] };
+for (const scene of SCENES) {
+  const lesson = findLesson(TRACKS[scene.topic], scene.lesson)?.lesson;
+  const parsed = parseSceneParams(scene.id, '');
+  if ('error' in parsed) throw new Error(`${scene.id}: its default parameters are invalid (${parsed.error})`);
+  visualize.scenes.push({
+    id: scene.id,
+    title: scene.title,
+    summary: scene.summary,
+    topic: scene.topic,
+    modes: scene.modes,
+    lesson: lesson && { title: lesson.title, href: `${TRACKS[scene.topic].basePath}/${lesson.slug}` },
+    params: parsed.params,
+    code: scene.code && { label: scene.code.label, lines: await highlightLines(scene.code.source, scene.code.language) },
+  });
+}
+write(path.join(OUT_DIR, 'visualize.json'), visualize);
 
 // A fingerprint of everything above: the app can add it to content URLs to skip stale caches.
 const version = createHash('sha256')
