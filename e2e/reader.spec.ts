@@ -61,6 +61,32 @@ test.describe('reading (needs the local backend)', () => {
     await expect(page).toHaveURL(/\/dsa\/sliding-window$/);
   });
 
+  test('a knowledge check is passed by answering every question correctly', async ({ page }) => {
+    await page.goto('/hld/aggregation-discovery');
+    const check = page.getByRole('region', { name: 'Knowledge check' });
+    await check.scrollIntoViewIfNeeded();
+    const questions = check.getByRole('group');
+    for (let i = 0; i < (await questions.count()); i++) {
+      const question = questions.nth(i);
+      const options = question.getByRole('radio');
+      for (let o = 0; o < (await options.count()); o++) {
+        await options.nth(o).check();
+        if (await question.getByText('Correct', { exact: true }).isVisible()) break;
+        await expect(question.getByText('Not quite — try another option.')).toBeVisible();
+      }
+    }
+    await expect(check.getByText('Knowledge check passed')).toBeVisible();
+  });
+
+  test('the estimator recalculates as assumptions change', async ({ page }) => {
+    await page.goto('/hld/estimator');
+    await expect(page.getByRole('heading', { level: 1, name: 'Back-of-the-envelope estimator' })).toBeVisible();
+    const perDay = page.locator('[data-output="requests-per-day"] dd').first();
+    await expect(perDay).toHaveText('100M');
+    await page.getByRole('textbox', { name: 'Requests per day' }).fill('1B');
+    await expect(perDay).toHaveText('1B');
+  });
+
   test('pages not ported yet say so', async ({ page }) => {
     await page.goto('/java/notebook');
     await expect(page.getByRole('heading', { level: 1, name: 'This page is on its way' })).toBeVisible();

@@ -10,10 +10,7 @@ const LABEL: Record<Widget['type'], string> = {
   viz: 'Animation',
 };
 
-/**
- * Stands in for an interactive part of a page (quiz, drill, checklist, estimator, animation) until
- * its component is ported (docs/plan.md, Phase 4).
- */
+/** Stands in for an interactive part of a page (so far, animations) until its component is ported (docs/plan.md, Phase 4b). */
 @Component({
   selector: 'app-widget-soon',
   changeDetection: ChangeDetectionStrategy.OnPush,

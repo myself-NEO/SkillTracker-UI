@@ -1,0 +1,99 @@
+<figure class="not-prose my-6 rounded-xl border border-accent/30 bg-surface p-4 sm:p-5">
+  <figcaption class="mb-4 flex flex-wrap items-center justify-between gap-2">
+    <span class="text-xs font-semibold tracking-wider text-accent uppercase">
+      🧮 Capacity estimator{{ title() ? ' · ' + title() : '' }}
+    </span>
+    <span class="text-[11px] text-muted">Change any assumption; decimal units (1 KB = 1,000 B)</span>
+  </figcaption>
+
+  <div class="grid gap-5 lg:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
+    <fieldset class="m-0 min-w-0 border-0 p-0">
+      <legend class="sr-only">Assumptions</legend>
+      <div
+        role="radiogroup"
+        aria-label="Start from"
+        (keydown)="onRadioGroupKeyDown($event)"
+        class="mb-3 inline-flex rounded-lg border border-border bg-bg p-0.5"
+      >
+        @for (option of modes; track option.value) {
+          <button
+            type="button"
+            role="radio"
+            [attr.aria-checked]="mode() === option.value"
+            [tabIndex]="mode() === option.value ? 0 : -1"
+            (click)="set('mode', option.value)"
+            class="rounded-md px-2.5 py-1 text-xs font-semibold focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent"
+            [class]="mode() === option.value ? 'bg-accent-soft text-accent' : 'text-muted hover:text-fg'"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+      <div class="grid grid-cols-2 gap-x-3 gap-y-2.5">
+        @for (field of fields(); track field.key) {
+          @let bad = invalid().has(field.key);
+          <div class="min-w-0">
+            <label [for]="id + '-' + field.key" class="mb-1 block text-[11px] leading-tight font-semibold text-muted">{{
+              field.label
+            }}</label>
+            <input
+              [id]="id + '-' + field.key"
+              [value]="values()[field.key] ?? ''"
+              (input)="set(field.key, $any($event.target).value)"
+              [attr.aria-invalid]="bad"
+              [attr.aria-describedby]="id + '-' + field.key + '-hint'"
+              inputmode="text"
+              autocomplete="off"
+              spellcheck="false"
+              class="w-full rounded-lg border bg-bg px-2.5 py-1.5 font-mono text-sm text-fg focus:ring-2 focus:ring-accent focus:outline-hidden"
+              [class.border-danger/70]="bad"
+              [class.border-border]="!bad"
+            />
+            <span
+              [id]="id + '-' + field.key + '-hint'"
+              class="mt-0.5 block text-[10px]"
+              [class.text-danger]="bad"
+              [class.text-muted]="!bad"
+              >{{ bad ? 'Not a number — try 10M, 1.5 KB' : field.hint }}</span
+            >
+          </div>
+        }
+      </div>
+      <div class="mt-3 flex flex-wrap gap-3 text-xs">
+        <button type="button" (click)="reset()" class="text-muted underline underline-offset-2 hover:text-fg">
+          Reset to preset
+        </button>
+        <label class="inline-flex items-center gap-1.5 text-muted">
+          <input
+            type="checkbox"
+            [checked]="showWorking()"
+            (change)="showWorking.set($any($event.target).checked)"
+            class="accent-accent"
+          />
+          Show working
+        </label>
+      </div>
+    </fieldset>
+
+    <div class="min-w-0 space-y-4" aria-live="polite">
+      @for (group of outputs(); track group.label) {
+        <div>
+          <h3 class="mb-1.5 text-[11px] font-semibold tracking-wider text-muted uppercase">{{ group.label }}</h3>
+          <dl class="divide-y divide-border rounded-lg border border-border bg-bg">
+            @for (output of group.items; track output.id) {
+              <div class="flex flex-wrap items-baseline justify-between gap-x-3 px-3 py-2" [attr.data-output]="output.id">
+                <dt class="text-sm text-fg-soft">{{ output.label }}</dt>
+                <dd class="font-mono text-sm font-semibold text-fg">{{ output.display }}</dd>
+                @if (showWorking()) {
+                  <dd class="mt-0.5 basis-full text-[12px] leading-snug [overflow-wrap:anywhere] text-muted">
+                    {{ output.formula }}
+                  </dd>
+                }
+              </div>
+            }
+          </dl>
+        </div>
+      }
+    </div>
+  </div>
+</figure>

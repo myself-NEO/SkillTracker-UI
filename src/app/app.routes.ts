@@ -35,6 +35,7 @@ const problemPage = () => import('./pages/problems/problem-page.component').then
 const libraryPage = () =>
   import('./pages/problems/problem-library-page.component').then((m) => m.ProblemLibraryPageComponent);
 const cheatsheetPage = () => import('./pages/cheatsheet/cheatsheet-page.component').then((m) => m.CheatsheetPageComponent);
+const estimatorPage = () => import('./pages/estimator/estimator-page.component').then((m) => m.EstimatorPageComponent);
 
 /**
  * One topic's pages, e.g. /java. The topic is in the route data; its curriculum is resolved once for
@@ -65,6 +66,7 @@ const topicRoute = (topic: TopicId): Route => ({
             loadComponent: problemPage,
           },
         ]),
+    ...(topic === 'hld' ? [{ path: 'estimator', title: 'Capacity estimator · HLD', loadComponent: estimatorPage }] : []),
     {
       path: ':lesson',
       canMatch: [lessonSlugMatch],

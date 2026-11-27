@@ -17,7 +17,7 @@ const DOC: ContentDoc = {
     '<div class="code-block"><pre><code>int x = 1;</code></pre></div></div>' +
     '<details data-reveal="hint"><summary>Hint</summary><div>Try a map.</div></details>' +
     '<div data-w="0"></div>',
-  widgets: [{ type: 'quiz', questions: [] }],
+  widgets: [{ type: 'viz', scene: 'load-balancer', title: 'Round robin', mode: 'loop', params: {} }],
   questions: {},
 };
 
@@ -52,7 +52,7 @@ describe('LessonBodyComponent', () => {
   it('shows the built HTML and mounts a stand-in for widgets not ported yet', async () => {
     const element = await render();
     expect(element.querySelector('h2#intro')?.textContent).toBe('Intro');
-    expect(element.querySelector('[data-w="0"]')?.textContent).toContain('Knowledge check');
+    expect(element.querySelector('[data-w="0"]')?.textContent).toContain('Animation');
   });
 
   it('opens links to this app through the router, and leaves other sites alone', async () => {

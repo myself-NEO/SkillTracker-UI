@@ -86,10 +86,11 @@ decides where Google sign-in may return.
     are removed (docs/plan.md, Phase 6).
 - `src/app/pages`: the signed-in pages. `pages/article` holds what lessons, problems and cheat sheets
   share: the three-column layout, the sidebars, and the body renderer, which mounts the interactive
-  parts (Mermaid diagrams so far) into the build's HTML. `src/app/ui`: smaller shared pieces
-  (progress bars and icons, topic glyphs, the hub's map).
-- `src/app/core`: the theme, the learner's progress (kept in this browser per account for now), the
-  generated content files and their route resolvers, scrolling and page titles.
+  parts into the build's HTML. `src/app/widgets`: those parts (quiz, drill, checklist, estimator).
+  `src/app/ui`: smaller shared pieces (progress bars and icons, topic glyphs, the hub's map).
+- `src/app/core`: the theme, the learner's progress and checklist ticks (kept in this browser per
+  account for now, `user-storage.ts`), the generated content files and their route resolvers,
+  scrolling and page titles.
 - `src/app/components`: the screens from before the redesign: Snake (`home`), `login`, `dashboard`,
   `roadmaps` and the old `navbar`.
 - `src/app/services`: API access and the sign-in state (`auth.service.ts`).

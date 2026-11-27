@@ -209,6 +209,17 @@ Not in 3b:
   - motion's `layoutId` is replaced by a small FLIP directive built on the Web Animations API.
   - The `/visualize` gallery and scene pages; `viz` and `scrolly` fences inside lessons.
 
+**Phase 4a (done 2026-11-27, in review): the widgets.**
+- Quiz:
+  - A wrong option says why; you can show the answer, and reset.
+  - On lessons, every choice is recorded, and answering all correctly marks the knowledge check passed. On other pages it is practice only.
+- Drill: reads estimates like 1.2K/s or 40 GB and says how far off they are; answers on lessons are recorded with the quiz answers.
+- Checklist: ticks are kept per page in the new interviews store (`st:<userId>:learning-interviews-v1`); on cheat sheets they last for the visit.
+- Estimator, in lessons and on `/hld/estimator` (with the latency and conversion tables).
+- `UserStorage` (`core/user-storage.ts`) keeps any state per account. ProgressStore and the new InterviewsStore use it.
+- `lib/progress/interviews.ts` has TheSWEguide's interviews model: the types, sanitizing and checklist updates. The session updates come with the mock interviews in Phase 6.
+- Animations (`viz` and `scrolly`) still show "on its way" until **Phase 4b**: the animation engine, the scenes, `/visualize`, and the hub's animation showcase.
+
 ## Phase 5: progress tied to the account (both repos)
 - **Backend:**
   - Flyway `V2__user_state.sql`: `user_state(user_id fk → users on delete cascade, kind check in ('progress','notebook','interviews'), data jsonb, updated_at)`, with PK (user_id, kind).

@@ -17,12 +17,18 @@ import {
   viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import type { TrackId } from '@content/shared/types';
 import { copyText } from '@lib/clipboard';
-import type { ContentDoc } from '@lib/content/doc';
+import type { ContentDoc, Widget } from '@lib/content/doc';
 import { ProgressStore } from '../../core/progress.store';
+import { ChecklistComponent } from '../../widgets/checklist.component';
+import { DrillComponent } from '../../widgets/drill.component';
+import { EstimatorComponent } from '../../widgets/estimator.component';
+import type { BodyPage } from '../../widgets/page';
+import { QuizComponent } from '../../widgets/quiz.component';
 import { MermaidDiagramComponent } from './mermaid-diagram.component';
 import { WidgetSoonComponent } from './widget-soon.component';
+
+export type { BodyPage };
 
 /** Article typography (TheSWEguide's Markdown.tsx). Colours come from the theme tokens (.prose in styles.css). */
 const PROSE = [
@@ -37,13 +43,6 @@ const PROSE = [
   'prose-thead:bg-surface-2 prose-th:px-3 prose-th:py-2 prose-th:text-left prose-td:px-3 prose-td:py-2',
   'prose-blockquote:font-normal prose-blockquote:not-italic prose-img:rounded-xl',
 ].join(' ');
-
-/** The page a body belongs to: opening a hint or solution on a problem page marks the problem started. */
-export interface BodyPage {
-  track: TrackId;
-  kind: 'lesson' | 'problem' | 'cheatsheet';
-  slug: string;
-}
 
 /**
  * The body of a lesson, problem or cheat sheet: the HTML the content build made (highlighted code,
@@ -113,16 +112,36 @@ export class LessonBodyComponent {
     for (const host of Array.from(root.querySelectorAll<HTMLElement>('[data-w]'))) {
       const widget = doc.widgets[Number(host.dataset['w'])];
       if (!widget) continue;
-      const options = { environmentInjector: this.environment, elementInjector: this.injector, hostElement: host };
-      const ref =
-        widget.type === 'mermaid'
-          ? createComponent(MermaidDiagramComponent, {
-              ...options,
-              bindings: [inputBinding('source', () => widget.source), inputBinding('title', () => widget.title)],
-            })
-          : createComponent(WidgetSoonComponent, { ...options, bindings: [inputBinding('kind', () => widget.type)] });
+      const ref = this.mount(widget, host);
       this.appRef.attachView(ref.hostView);
       this.widgets.push(ref);
+    }
+  }
+
+  /** Creates the component of a widget in its placeholder (which becomes the component's host). */
+  private mount(widget: Widget, hostElement: HTMLElement): ComponentRef<unknown> {
+    const options = { environmentInjector: this.environment, elementInjector: this.injector, hostElement };
+    const page = inputBinding('page', () => this.page());
+    switch (widget.type) {
+      case 'mermaid':
+        return createComponent(MermaidDiagramComponent, {
+          ...options,
+          bindings: [inputBinding('source', () => widget.source), inputBinding('title', () => widget.title)],
+        });
+      case 'quiz':
+        return createComponent(QuizComponent, { ...options, bindings: [inputBinding('widget', () => widget), page] });
+      case 'drill':
+        return createComponent(DrillComponent, { ...options, bindings: [inputBinding('widget', () => widget), page] });
+      case 'checklist':
+        return createComponent(ChecklistComponent, { ...options, bindings: [inputBinding('widget', () => widget), page] });
+      case 'estimator':
+        return createComponent(EstimatorComponent, {
+          ...options,
+          bindings: [inputBinding('title', () => widget.title), inputBinding('preset', () => widget.preset)],
+        });
+      default:
+        // Animations arrive with the animation engine (docs/plan.md, Phase 4b).
+        return createComponent(WidgetSoonComponent, { ...options, bindings: [inputBinding('kind', () => widget.type)] });
     }
   }
 

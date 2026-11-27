@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import type { ProblemStatus, TrackId } from '@content/shared/types';
 import { problemStatus, isLessonComplete } from '@lib/progress/progress';
 import { ProgressStore } from '../../core/progress.store';
+import { onRadioGroupKeyDown } from '../../ui/radio-group';
 
 // Pieces shared by the lesson, problem and cheat sheet pages (ported from TheSWEguide's
 // ArticleParts, ProgressBits and learn/ui).
@@ -265,17 +266,7 @@ export class ProblemStatusPickerComponent {
   protected readonly anyChecked = computed(() => this.statuses().includes(this.status()));
 
   /** Arrow keys move to, and select, the next or previous status. */
-  protected onKeyDown(event: KeyboardEvent) {
-    const step = ({ ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 } as Record<string, number>)[event.key];
-    if (!step) return;
-    const radios = Array.from((event.currentTarget as HTMLElement).querySelectorAll<HTMLElement>('[role="radio"]'));
-    const index = radios.indexOf(document.activeElement as HTMLElement);
-    if (index < 0) return;
-    event.preventDefault();
-    const next = radios[(index + step + radios.length) % radios.length];
-    next.focus();
-    next.click();
-  }
+  protected readonly onKeyDown = onRadioGroupKeyDown;
 }
 
 /** "3 of 26 problems completed" with a bar, for a practice library. */
