@@ -1,10 +1,10 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from './components/home/home.component';
 import { LoginComponent } from './components/login/login.component';
-import { DashboardComponent } from './components/dashboard/dashboard.component';
-import { RoadmapsComponent } from './components/roadmaps/roadmaps.component';
 import { authGuard, guestGuard } from './auth.guard';
 
+// Snake and the login page load with the app, so the landing page shows at once. Everything behind
+// the login is loaded on demand, which keeps the first download small.
 export const routes: Routes = [
   {
     // Everyone, signed in or not, lands on the Snake page; signed-in users get a link to the dashboard.
@@ -18,12 +18,12 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    component: DashboardComponent,
+    loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent),
     canActivate: [authGuard]
   },
   {
     path: 'roadmaps',
-    component: RoadmapsComponent,
+    loadComponent: () => import('./components/roadmaps/roadmaps.component').then(m => m.RoadmapsComponent),
     canActivate: [authGuard]
   },
   {
