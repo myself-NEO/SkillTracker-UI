@@ -1,0 +1,141 @@
+// The content build: turns content/ (Markdown + curriculum TypeScript) into the JSON the app
+// loads, under public/ (git-ignored). Runs before `ng build` and `ng serve` (npm prebuild/predev).
+//
+//   public/content/index.json                          topics, their counts, and a content version
+//   public/content/<topic>/track.json                  the topic's curriculum (stages, modules, lessons, problems)
+//   public/content/<topic>/lessons/<slug>.json          a lesson body (ContentDoc, src/lib/content/doc.ts)
+//   public/content/<topic>/problems/<slug>.json         a problem breakdown (ContentDoc)
+//   public/content/dsa/cheatsheets/<slug>.json          a DSA cheat sheet (ContentDoc)
+//   public/content/dsa/practice.json                   the DSA coding-question list and cheat sheet index
+//   public/search-index.json                          the ⌘K search index
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { gzipSync } from 'node:zlib';
+import { CHEATSHEETS } from '@content/dsa/cheatsheets';
+import { LEETCODE_PROBLEMS } from '@content/dsa/problems';
+import { PRACTICE_TOPICS } from '@content/dsa/practiceTopics';
+import { hasProblemBody } from '@content/shared/loaders';
+import type { ContentDoc } from '@lib/content/doc';
+import { topicStats } from '@lib/content/stats';
+import { flattenLessons, TRACKS } from '@lib/content/tracks';
+import { TOPIC_IDS, TOPICS } from '@lib/topics';
+import { countSlugs, writeManifest } from './manifest';
+import { CONTENT_DIR, OUT_DIR, rel, ROOT, SEARCH_INDEX_FILE } from './paths';
+import { renderDoc } from './pipeline';
+import { buildSearchIndex } from './search-index';
+
+const started = Date.now();
+
+// Skip the work when nothing it reads has changed since the last build (`--force` rebuilds anyway):
+// the content, this tool, and the shared libraries it renders with.
+const STAMP = path.join(CONTENT_DIR, '.generated', 'build-inputs');
+const inputsHash = () => {
+  const hash = createHash('sha256');
+  const add = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name !== '.generated') add(full);
+      } else {
+        hash.update(rel(full)).update(readFileSync(full));
+      }
+    }
+  };
+  for (const dir of [CONTENT_DIR, path.join(ROOT, 'tools', 'content'), path.join(ROOT, 'src', 'lib')]) add(dir);
+  hash.update(readFileSync(path.join(ROOT, 'package-lock.json')));
+  return hash.digest('hex');
+};
+const inputs = inputsHash();
+const upToDate =
+  existsSync(STAMP) && readFileSync(STAMP, 'utf8') === inputs && existsSync(path.join(OUT_DIR, 'index.json')) && existsSync(SEARCH_INDEX_FILE);
+if (upToDate && !process.argv.includes('--force')) {
+  console.log(`content: up to date (${rel(OUT_DIR)}); \`npm run content -- --force\` rebuilds anyway`);
+  process.exit(0);
+}
+
+const written: { file: string; json: string }[] = [];
+
+const write = (file: string, data: unknown) => {
+  const json = JSON.stringify(data);
+  mkdirSync(path.dirname(file), { recursive: true });
+  writeFileSync(file, json);
+  written.push({ file, json });
+};
+
+// LF only: quiz progress is keyed by hashes of the exact text, whatever line endings a checkout has.
+const read = (...parts: string[]) => readFileSync(path.join(CONTENT_DIR, ...parts), 'utf8').replace(/\r\n?/g, '\n');
+
+// Which bodies exist: the curriculum modules read this to mark unwritten lessons "coming soon".
+const { manifest } = writeManifest(CONTENT_DIR);
+console.log(`content: ${countSlugs(manifest.lessons)} lesson and ${countSlugs(manifest.problems)} problem bodies`);
+
+rmSync(OUT_DIR, { recursive: true, force: true });
+
+const docs: { file: string; doc: ContentDoc }[] = [];
+const renderTo = async (file: string, markdown: string, basePath: string, javaVersion?: number) => {
+  const doc = await renderDoc(markdown, { basePath, javaVersion });
+  write(file, doc);
+  docs.push({ file, doc });
+};
+
+for (const topic of TOPIC_IDS) {
+  const track = TRACKS[topic];
+  write(path.join(OUT_DIR, topic, 'track.json'), track);
+  for (const { lesson } of flattenLessons(track)) {
+    if (lesson.comingSoon) continue;
+    await renderTo(
+      path.join(OUT_DIR, topic, 'lessons', `${lesson.slug}.json`),
+      read(topic, 'lessons', `${lesson.slug}.md`),
+      track.basePath,
+      lesson.javaVersion ?? track.javaVersion,
+    );
+  }
+  for (const problem of track.problems) {
+    if (!hasProblemBody(topic, problem.slug)) continue;
+    await renderTo(
+      path.join(OUT_DIR, topic, 'problems', `${problem.slug}.json`),
+      read(topic, 'problems', `${problem.slug}.md`),
+      track.basePath,
+      track.javaVersion,
+    );
+  }
+}
+
+for (const sheet of CHEATSHEETS) {
+  await renderTo(path.join(OUT_DIR, 'dsa', 'cheatsheets', `${sheet.slug}.json`), read('dsa', 'cheatsheets', `${sheet.slug}.md`), TRACKS.dsa.basePath);
+}
+write(path.join(OUT_DIR, 'dsa', 'practice.json'), { topics: PRACTICE_TOPICS, problems: LEETCODE_PROBLEMS, cheatsheets: CHEATSHEETS });
+
+// A fingerprint of everything above: the app can add it to content URLs to skip stale caches.
+const version = createHash('sha256')
+  .update(written.map((w) => `${rel(w.file)}\n${w.json}`).sort().join('\n'))
+  .digest('hex')
+  .slice(0, 12);
+write(path.join(OUT_DIR, 'index.json'), {
+  version,
+  topics: TOPICS.map((topic) => ({ ...topic, stats: topicStats(topic.id) })),
+});
+
+const searchIndex = buildSearchIndex();
+write(SEARCH_INDEX_FILE, searchIndex);
+
+// Report: counts, sizes (raw and gzipped, as served) and the largest bodies.
+const kb = (bytes: number) => `${(bytes / 1024).toFixed(0)} KB`;
+const gz = (json: string) => gzipSync(json).length;
+const docBytes = docs.map(({ file }) => written.find((w) => w.file === file)!.json);
+const widgets = docs.reduce((n, { doc }) => n + doc.widgets.length, 0);
+console.log(
+  `content: ${docs.length} documents (${widgets} widgets), ${kb(docBytes.reduce((n, j) => n + j.length, 0))} raw, ` +
+    `${kb(docBytes.reduce((n, j) => n + gz(j), 0))} gzipped -> ${rel(OUT_DIR)}`,
+);
+const largest = docs
+  .map(({ file }, i) => ({ file, raw: docBytes[i].length, gzip: gz(docBytes[i]) }))
+  .sort((a, b) => b.raw - a.raw)
+  .slice(0, 3)
+  .map((d) => `${rel(d.file).replace('public/content/', '')} ${kb(d.raw)} (${kb(d.gzip)} gz)`);
+console.log(`content: largest: ${largest.join(', ')}`);
+const indexJson = written.find((w) => w.file === SEARCH_INDEX_FILE)!.json;
+console.log(`content: search index ${searchIndex.length} entries, ${kb(indexJson.length)} (${kb(gz(indexJson))} gz) -> ${rel(SEARCH_INDEX_FILE)}`);
+writeFileSync(STAMP, inputs);
+console.log(`content: version ${version}, done in ${((Date.now() - started) / 1000).toFixed(1)} s`);

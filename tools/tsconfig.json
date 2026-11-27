@@ -1,0 +1,9 @@
+{
+  // Type-checks the content build, its tests, the framework-free libraries and the curriculum
+  // modules, in Node (npm run typecheck). The Angular app has its own tsconfig.app.json.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["./**/*.ts", "./**/*.mts", "../src/lib/**/*.ts", "../content/**/*.ts"]
+}
