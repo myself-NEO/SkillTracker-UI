@@ -1,0 +1,304 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+/*
+ * Global styles: the design system of TheSWEguide (light/dark tokens, topic colours, typography),
+ * which the logged-in learning pages are built with. Plain CSS rather than SCSS: Tailwind v4's own
+ * at-rules (@custom-variant, @theme, @variant) aren't valid Sass.
+ *
+ * The Snake, login, Dashboard and Roadmaps screens keep their own dark styling (hard-coded Tailwind
+ * colours), and index.html pins data-theme="dark" until the new learning shell, with its theme
+ * toggle, replaces them.
+ */
+
+/* Dark styles follow the data-theme attribute on <html>: the visitor's choice, or else their
+   system setting. Without the attribute, the system setting applies directly. */
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme]), :root:not([data-theme]) *) {
+      @slot;
+    }
+  }
+}
+
+/*
+ * Design tokens. The interface is a neutral, slightly blue slate ("ink"); colour comes from the four
+ * topics. Every token has a light value here and a dark value in the dark variant below. Components
+ * use the Tailwind colours defined from these in @theme (bg-surface, text-muted, text-accent, ...).
+ * --accent is the brand blue by default; a [data-track] element switches it to its topic.
+ */
+:root {
+  color-scheme: light;
+  --bg: #f6f8fb;
+  --surface: #ffffff;
+  --surface-2: #eef1f6;
+  --surface-3: #e2e7ef;
+  --border: #dfe4ec;
+  --border-strong: #c5cdda;
+  --fg: #0d1526;
+  --fg-soft: #2c384d;
+  --muted: #586579;
+  /* The faintest text colour still keeps 4.5:1 on every surface (WCAG AA for small text). */
+  --faint: #626d80;
+  --code-bg: #f3f5f9;
+
+  --java: #b45309;
+  --java-soft: #fdf2e1;
+  --dsa: #047857;
+  --dsa-soft: #e1f4eb;
+  --lld: #6d28d9;
+  --lld-soft: #f0eafd;
+  --hld: #0369a1;
+  --hld-soft: #e2f1fa;
+  --brand: #3446a8;
+  --brand-soft: #eaedf9;
+
+  --accent: var(--brand);
+  --accent-soft: var(--brand-soft);
+  --accent-fg: #ffffff;
+
+  --success: #047857;
+  --success-soft: #e1f4eb;
+  --danger: #be123c;
+  --danger-soft: #fdeaee;
+  --warning: #b45309;
+  --warning-soft: #fdf2e1;
+  --insight: #6d28d9;
+  --insight-soft: #f0eafd;
+  --info: #0369a1;
+  --info-soft: #e2f1fa;
+}
+
+:root {
+  @variant dark {
+    color-scheme: dark;
+    --bg: #090e1a;
+    --surface: #0f1729;
+    --surface-2: #151f36;
+    --surface-3: #1c2843;
+    --border: #1f2a42;
+    --border-strong: #2f3d5c;
+    --fg: #e7ecf5;
+    --fg-soft: #c0cadb;
+    --muted: #8a97ae;
+    --faint: #7a88a3;
+    --code-bg: #0c1324;
+
+    --java: #fbbf24;
+    --java-soft: #fbbf241a;
+    --dsa: #34d399;
+    --dsa-soft: #34d3991a;
+    --lld: #a78bfa;
+    --lld-soft: #a78bfa1f;
+    --hld: #38bdf8;
+    --hld-soft: #38bdf81a;
+    --brand: #8b9cff;
+    --brand-soft: #8b9cff1f;
+
+    --accent-fg: #090e1a;
+
+    --success: #34d399;
+    --success-soft: #34d3991a;
+    --danger: #fb7185;
+    --danger-soft: #fb71851a;
+    --warning: #fbbf24;
+    --warning-soft: #fbbf241a;
+    --insight: #a78bfa;
+    --insight-soft: #a78bfa1f;
+    --info: #38bdf8;
+    --info-soft: #38bdf81a;
+  }
+}
+
+[data-track='java'] {
+  --accent: var(--java);
+  --accent-soft: var(--java-soft);
+}
+[data-track='dsa'] {
+  --accent: var(--dsa);
+  --accent-soft: var(--dsa-soft);
+}
+[data-track='lld'] {
+  --accent: var(--lld);
+  --accent-soft: var(--lld-soft);
+}
+[data-track='hld'] {
+  --accent: var(--hld);
+  --accent-soft: var(--hld-soft);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--fg);
+  --color-fg-soft: var(--fg-soft);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-code: var(--code-bg);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-fg: var(--accent-fg);
+  --color-java: var(--java);
+  --color-java-soft: var(--java-soft);
+  --color-dsa: var(--dsa);
+  --color-dsa-soft: var(--dsa-soft);
+  --color-lld: var(--lld);
+  --color-lld-soft: var(--lld-soft);
+  --color-hld: var(--hld);
+  --color-hld-soft: var(--hld-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-insight: var(--insight);
+  --color-insight-soft: var(--insight-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  /* Self-hosted variable fonts (@fontsource-variable/*, listed in angular.json "styles"). */
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Space Grotesk Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Code', monospace;
+}
+
+/* In the base layer, so utility classes (the old screens' own colours, a component's own focus
+   style) win over these defaults. */
+@layer base {
+  body {
+    background: var(--bg);
+    color: var(--fg);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  /* Section headings stay clear of the sticky header and lesson bar when linked to. */
+  [id] {
+    scroll-margin-top: 7rem;
+  }
+}
+
+::selection {
+  background: color-mix(in oklab, var(--accent) 24%, transparent);
+}
+
+/* Article typography: the typography plugin's colours, taken from the tokens. */
+.prose {
+  --tw-prose-body: var(--fg-soft);
+  --tw-prose-headings: var(--fg);
+  --tw-prose-lead: var(--muted);
+  --tw-prose-links: var(--accent);
+  --tw-prose-bold: var(--fg);
+  --tw-prose-counters: var(--muted);
+  --tw-prose-bullets: var(--faint);
+  --tw-prose-hr: var(--border);
+  --tw-prose-quotes: var(--fg-soft);
+  --tw-prose-quote-borders: var(--border-strong);
+  --tw-prose-captions: var(--muted);
+  --tw-prose-kbd: var(--fg);
+  --tw-prose-code: var(--fg);
+  --tw-prose-pre-code: var(--fg);
+  --tw-prose-pre-bg: var(--code-bg);
+  --tw-prose-th-borders: var(--border-strong);
+  --tw-prose-td-borders: var(--border);
+  font-size: 1.0625rem;
+  line-height: 1.75;
+}
+
+/* Code blocks: Shiki emits both themes' colours as variables; the page's theme picks one. */
+.code-block pre.shiki {
+  margin: 0;
+  overflow-x: auto;
+  padding: 1rem 1.125rem;
+  font-size: 13.5px;
+  line-height: 1.65;
+  background-color: transparent !important;
+}
+.code-block pre.shiki code {
+  font-family: var(--font-mono);
+}
+.shiki,
+.shiki span {
+  color: var(--shiki-light);
+  @variant dark {
+    color: var(--shiki-dark);
+  }
+}
+
+/* Long pages: the browser skips laying out and painting this block until it comes near the
+   viewport. Used only on boxes that already clip their overflow (code blocks, tables, diagrams,
+   the drawer's lesson list), so the paint containment this adds can't cut anything off. "auto"
+   remembers a block's real height once it has been shown, so scrolling back doesn't jump. */
+.render-when-near {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
+}
+
+/* A faint dot grid behind page heroes, fading out downwards. */
+.dot-grid {
+  background-image: radial-gradient(var(--border-strong) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 85%);
+}
+
+/* The learning hub's map: the learning path draws itself, then a dot travels along it. */
+.learning-map-route {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: learning-map-draw 2.4s ease-out 0.2s forwards;
+}
+@keyframes learning-map-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .learning-map-route {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .learning-map-traveller {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Thin translucent scrollbars, as before (they suit the dark screens). */
+@layer utilities {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
