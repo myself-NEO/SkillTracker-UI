@@ -10,3 +10,6 @@ coverage/
 .angular/
 test-results/
 playwright-report/
+content/.generated/
+public/content/
+public/search-index.json

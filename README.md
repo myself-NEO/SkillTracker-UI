@@ -27,10 +27,31 @@ Both serve the app on `http://localhost:3000`. The backend is chosen at build ti
 - `npm run dev:live` needs the live backend's `FRONTEND_URL` (set on Render) to include
   `http://localhost:3000`, otherwise the browser blocks the requests with a CORS error.
 
+## Lesson content
+
+`content/` holds the Java, DSA, LLD and HLD lessons, problems and cheat sheets. They are Markdown
+bodies plus TypeScript curriculum metadata, copied from TheSWEguide and edited here now. The content
+build turns them into JSON the app loads:
+
+```bash
+npm run validate   # checks the content: curriculum vs bodies, links, widget blocks, animations
+npm run content    # writes public/content/** and public/search-index.json (skipped when nothing changed)
+```
+
+- Both run automatically: `npm run build` validates and builds the content first, and `npm run dev`
+  builds it if needed. The output is git-ignored.
+- Each lesson, problem and cheat sheet becomes one file, `public/content/<topic>/<lessons|problems|cheatsheets>/<slug>.json`.
+  It holds the page's HTML, highlighted at build time with Shiki, plus the data of its interactive
+  widgets (`src/lib/content/doc.ts`).
+- The build lives in `tools/content`. The framework-free code it shares with the app is in `src/lib`
+  (Markdown helpers, widget parsers, the animation scenes' logic, search scoring).
+- How to write content: [docs/authoring-content.md](docs/authoring-content.md) and
+  [docs/authoring-animations.md](docs/authoring-animations.md).
+
 ## Tests
 
 ```bash
-npm test           # unit tests (Vitest, through Angular's unit-test builder)
+npm test           # Angular unit tests (ng test), then the content tests (Vitest in Node, tools/tests)
 npm run e2e        # end-to-end tests (Playwright, desktop Chrome and a Pixel 7)
 ```
 

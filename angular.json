@@ -95,6 +95,9 @@
           "options": {
             "tsConfig": "tsconfig.spec.json",
             "buildTarget": "app:build:development",
+            "include": [
+              "src/**/*.spec.ts"
+            ],
             "setupFiles": [
               "src/test-setup.ts"
             ]

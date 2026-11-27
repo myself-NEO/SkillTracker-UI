@@ -1,6 +1,12 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
+/* The lesson HTML is generated (public/content, git-ignored, so never scanned); its classes are
+   written in the content build's renderer and the diagram renderers in src/lib. The Markdown itself
+   holds no classes. */
+@source '../tools/content';
+@source not '../content';
+
 /*
  * Global styles: the design system of TheSWEguide (light/dark tokens, topic colours, typography),
  * which the logged-in learning pages are built with. Plain CSS rather than SCSS: Tailwind v4's own

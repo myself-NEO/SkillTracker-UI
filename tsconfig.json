@@ -12,9 +12,14 @@
     ],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
+    "resolveJsonModule": true,
     "isolatedModules": true,
     "moduleDetection": "force",
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@lib/*": ["./src/lib/*"],
+      "@content/*": ["./content/*"]
+    }
   }
 }
