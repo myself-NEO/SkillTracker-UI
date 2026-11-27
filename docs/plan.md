@@ -171,6 +171,17 @@ How the design hides Render's cold start:
 - **Local stores** (moved here from Phase 4): TheSWEguide's stores ported to signals, local-only and per user. Bookmarks and copy-to-snippet need them already.
 - **Lesson loading:** a route resolver fetches the lesson JSON (LRU cache, prev/next prefetched when idle) and re-applies `#fragment` after mounting. Event delegation runs outside the zone. Content files live under a build-hash path with immutable caching.
 
+**Phase 3a (done 2026-11-27, in review):**
+- The routes, guards and return URLs above.
+- The signed-in shell: a header with the topics, Mock Interview, a theme toggle (in the account menu on phones) and an account menu, plus a footer.
+- `/learn` and the four topic roadmaps, ported from TheSWEguide. Progress is per account in this browser (`st:<userId>:learning-progress-v1`).
+- `/mock-interview` with the scheduler moved out of the Dashboard and restyled. It still calls `/api/dashboard/interview*` until Phase 6.
+- A not-found page, which says "on its way" for topic pages not ported yet.
+- `index.json` carries each topic's lesson slugs, so the hub needs no curriculum file.
+- AppComponent and the dark layouts keep default change detection: the screens from before the redesign update plain fields after async work.
+
+Left for **Phase 3b**: lessons, problems and cheat sheets (the reader), search and Mermaid.
+
 ## Phase 4: interactive widgets and animations
 - **Widgets:** Quiz, Drill, Checklist, Estimator, hint/reveal tracking, copy button.
 - **Stores:** the widgets use the Phase 3 local stores (`st:<userId>:<key>`). Server sync comes in Phase 5.

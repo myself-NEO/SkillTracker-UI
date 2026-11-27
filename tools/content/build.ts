@@ -16,6 +16,7 @@ import { CHEATSHEETS } from '@content/dsa/cheatsheets';
 import { LEETCODE_PROBLEMS } from '@content/dsa/problems';
 import { PRACTICE_TOPICS } from '@content/dsa/practiceTopics';
 import { hasProblemBody } from '@content/shared/loaders';
+import type { ContentIndex, IndexTopic } from '@lib/content/catalog';
 import type { ContentDoc } from '@lib/content/doc';
 import { topicStats } from '@lib/content/stats';
 import { flattenLessons, TRACKS } from '@lib/content/tracks';
@@ -114,8 +115,13 @@ const version = createHash('sha256')
   .slice(0, 12);
 write(path.join(OUT_DIR, 'index.json'), {
   version,
-  topics: TOPICS.map((topic) => ({ ...topic, stats: topicStats(topic.id) })),
-});
+  topics: TOPICS.map((topic): IndexTopic => ({
+    ...topic,
+    basePath: TRACKS[topic.id].basePath,
+    stats: topicStats(topic.id),
+    lessonSlugs: flattenLessons(TRACKS[topic.id]).map(({ lesson }) => lesson.slug),
+  })),
+} satisfies ContentIndex);
 
 const searchIndex = buildSearchIndex();
 write(SEARCH_INDEX_FILE, searchIndex);

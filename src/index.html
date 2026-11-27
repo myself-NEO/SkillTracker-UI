@@ -1,6 +1,4 @@
 <!doctype html>
-<!-- data-theme="dark": the current screens are dark-only. The learning shell will replace this with
-     the visitor's choice (or system setting), set by a small script before the first paint. -->
 <html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8">
@@ -9,8 +7,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Play a round of Snake, then log in to level up your software engineering skills: Java, DSA, LLD and HLD.">
     <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+    <!-- The theme, set before the first paint so no page flashes the wrong one (ThemeService takes
+         over once the app runs). Snake, the login and the old dashboard pages are dark-only; the
+         learning pages follow the visitor's choice, or else their system setting. -->
+    <script>
+      (function () {
+        try {
+          var darkOnly = /^\/(home|login|dashboard|roadmaps)?\/?$/.test(location.pathname);
+          var saved = localStorage.getItem('theme');
+          var dark = darkOnly || saved === 'dark' || (saved !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+          var root = document.documentElement;
+          root.setAttribute('data-theme', dark ? 'dark' : 'light');
+          root.style.colorScheme = dark ? 'dark' : 'light';
+        } catch (e) {}
+      })();
+    </script>
   </head>
-  <body class="bg-[#0b0f19] text-slate-200 antialiased min-h-screen">
+  <body class="antialiased min-h-screen">
     <app-root></app-root>
   </body>
 </html>
