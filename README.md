@@ -1,8 +1,8 @@
 # SkillTracker-UI
 
 The Angular frontend of SkillTracker (NeoLevelUP). Signed-out visitors get a Snake game; signing in
-leads into the app. The app is becoming the home of TheSWEguide's Java, DSA, LLD and HLD lessons:
-the phases are in [docs/plan.md](docs/plan.md).
+leads into the app: TheSWEguide's Java, DSA, LLD and HLD lessons, practice and interview prep, and a
+Mock Interview tab. The phases of the move are in [docs/plan.md](docs/plan.md).
 
 - Angular 21 (standalone components, `@angular/build:application`), Tailwind CSS 4
 - Backend: [SkillTracker-Srcv](../SkillTracker-Srcv) (Spring Boot), on Render, with a Neon PostgreSQL database
@@ -73,7 +73,7 @@ npm run e2e        # end-to-end tests (Playwright, desktop Chrome and a Pixel 7)
 Vercel builds and serves the app from this repository ([vercel.json](vercel.json)):
 
 - **Build:** framework preset Angular, build command `npm run build`, output directory `dist/browser`.
-- **Routing:** every path without a file falls back to `index.html`, so deep links like `/dashboard` work on refresh.
+- **Routing:** every path without a file falls back to `index.html`, so deep links like `/java/generics-basics` work on refresh.
 - **Branches:** production comes from `main`. Every other branch gets a preview URL, and the `dev`
   branch keeps a stable one: `https://<project>-git-dev-<team>.vercel.app`.
 
@@ -83,14 +83,13 @@ decides where Google sign-in may return.
 
 ## Layout
 
-- `src/app/app.routes.ts`: the routes, in three frames:
+- `src/app/app.routes.ts`: the routes, in two frames:
   - the public pages, always dark (`layouts/game-layout`): Snake (`/home`) and `/login`;
   - the signed-in app, light or dark (`shell/`, with the ⌘K search): `/learn`, the topic pages
     (`/java`, `/dsa`, `/lld`, `/hld`), their lessons (`/java/generics-basics`), practice problems
     (`/lld/problems/parking-lot`) and DSA's cheat sheets, the animations (`/visualize`), and
-    `/mock-interview`. Signed-out visitors are sent to `/login?returnUrl=…` and come back afterwards;
-  - the old `/dashboard` and `/roadmaps` (`layouts/legacy-layout`), out of the navigation until they
-    are removed (docs/plan.md, Phase 6).
+    `/mock-interview`. Signed-out visitors are sent to `/login?returnUrl=…` and come back afterwards.
+  - The old app's `/dashboard` and `/roadmaps` were removed in Phase 6b; they lead to `/learn`.
 - `src/app/pages`: the signed-in pages. `pages/article` holds what lessons, problems and cheat sheets
   share: the three-column layout, the sidebars, and the body renderer, which mounts the interactive
   parts into the build's HTML. `src/app/widgets`: those parts (quiz, drill, checklist, estimator).
@@ -125,8 +124,7 @@ decides where Google sign-in may return.
 - `src/lib/markdown/client.ts`: notes and saved answers are Markdown. They are rendered in the
   browser by building the page elements from the parsed Markdown against an allowlist, never by
   using the text as HTML.
-- `src/app/components`: the screens from before the redesign: Snake (`home`), `login`, `dashboard`,
-  `roadmaps` and the old `navbar`.
+- `src/app/components`: the screens from before the redesign: Snake (`home`) and `login`.
 - `src/app/services`: API access and the sign-in state (`auth.service.ts`).
 - `src/app/interceptors`: add the backend origin and the token to `/api` calls, and sign out on a 401.
 - `src/styles.css`: TheSWEguide's design tokens (light and dark), fonts and typography.

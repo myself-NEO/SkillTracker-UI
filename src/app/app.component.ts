@@ -6,7 +6,7 @@ import { AuthService } from './services/auth.service';
 
 /**
  * The app's root: each page brings its own frame (see app.routes.ts). Default change detection: the
- * pages from before the redesign (Snake, login, the old dashboard) update plain fields after async
+ * pages from before the redesign (Snake, login) update plain fields after async
  * work, which an OnPush ancestor would never show.
  */
 @Component({

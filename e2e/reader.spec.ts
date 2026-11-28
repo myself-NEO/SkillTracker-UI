@@ -148,4 +148,12 @@ test.describe('reading (needs the local backend)', () => {
     await page.goto('/java/no-such-lesson');
     await expect(page.getByRole('heading', { level: 1, name: 'This page doesn’t exist' })).toBeVisible();
   });
+
+  test("the old app's dashboard and roadmaps lead to the topics", async ({ page }) => {
+    for (const old of ['/dashboard', '/roadmaps']) {
+      await page.goto(old);
+      await expect(page).toHaveURL(/\/learn$/);
+    }
+    await expect(page.getByRole('heading', { level: 1, name: /one concept at a time/ })).toBeVisible();
+  });
 });

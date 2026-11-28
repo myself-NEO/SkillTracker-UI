@@ -12,9 +12,8 @@
  * which the logged-in learning pages are built with. Plain CSS rather than SCSS: Tailwind v4's own
  * at-rules (@custom-variant, @theme, @variant) aren't valid Sass.
  *
- * The Snake, login, Dashboard and Roadmaps screens keep their own dark styling (hard-coded Tailwind
- * colours), and index.html pins data-theme="dark" until the new learning shell, with its theme
- * toggle, replaces them.
+ * The Snake and login screens keep their own dark styling (hard-coded Tailwind colours), and
+ * index.html and their layout pin data-theme="dark" while they're shown.
  */
 
 /* Dark styles follow the data-theme attribute on <html>: the visitor's choice, or else their

@@ -1,3 +1,6 @@
+// Shapes of what the backend (SkillTracker-Srcv) answers.
+
+/** The signed-in account (`/api/auth/me`, and the login's answer). */
 export interface User {
   id: string;
   email: string;
@@ -6,67 +9,18 @@ export interface User {
   picture?: string;
 }
 
-export type TopicStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
-
-export interface Question {
-  id: string;
-  title: string;
-  link?: string;
-  completed: boolean;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-}
-
-export interface Topic {
-  id: string;
-  name: string;
-  status: TopicStatus;
-  questions: Question[];
-}
-
-export interface TechnicalModule {
-  id: string;
-  name: string;
-  icon: string;
-  description: string;
-  topics: Topic[];
-}
-
+/** A mock interview with another person, from the scheduler (`/api/interviews`). */
 export interface MockInterview {
   id: string;
   type: 'System Design' | 'DSA' | 'Behavioral' | 'OOD';
+  /** yyyy-mm-dd */
   date: string;
+  /** hh:mm */
   time: string;
   interviewer: string;
   status: 'Scheduled' | 'Completed' | 'Cancelled';
-  score?: number; // 1-5 stars
+  /** 1–5 stars, once scored. */
+  score?: number;
   feedback?: string;
   notes?: string;
-}
-
-export interface Milestone {
-  id: string;
-  title: string;
-  description?: string;
-  targetDate?: string;
-  completed: boolean;
-  order: number;
-}
-
-export type RoadmapType = 'DSA' | 'HLD' | 'LLD' | 'Behaviour' | 'Good to know';
-
-export interface StaticRoadmapItem {
-  id?: string;
-  type: RoadmapType;
-  week: string;
-  title: string;
-  description: string;
-  url?: string;
-  topics: string[];
-  practice?: string[];
-}
-
-export interface DashboardData {
-  modules: TechnicalModule[];
-  interviews: MockInterview[];
-  milestones: Milestone[];
 }

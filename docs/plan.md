@@ -421,7 +421,7 @@ Split into three:
   - the simulator: the brief, questions, the clock and its pause, drafts, finishing;
   - e2e: an HLD interview from the list to the attempts, kept across a reload and with the account.
 
-**Phase 6a.3 (done 2026-11-28, in review): the Mock Interview tab and `/api/interviews`.**
+**Phase 6a.3 (done and committed 2026-11-28): the Mock Interview tab and `/api/interviews`.**
 - **Backend (SkillTracker-Srcv):**
   - `GET /api/interviews` lists the learner's mock interviews with other people, soonest first (by date, then time).
   - `POST /api/interviews` books one (201).
@@ -442,6 +442,18 @@ Split into three:
   - the practice cards' figures and the unfinished interviews;
   - the scheduler's calls;
   - e2e: the tab's links, and booking and scoring a session against the local backend.
+
+**Phase 6b (done 2026-11-28, in review): the UI stops calling the old APIs.**
+- **Removed:**
+  - the old app's Dashboard and Roadmaps pages (`/dashboard`, `/roadmaps`);
+  - their services (`dashboard.service.ts`, `roadmap.service.ts`), the old navbar and the legacy layout;
+  - their types in `types.ts`, which keeps `User` and `MockInterview`;
+  - the app-wide Lucide registration: 28 icons looked up by name, for those pages only. The login page imports its own five.
+- `/dashboard` and `/roadmaps` now lead to `/learn`, and the pre-paint script no longer pins them dark.
+- The UI now calls only `/api/health`, `/api/auth/*`, `/api/state` and `/api/interviews`.
+- The first download went from 135.75 to 129.97 kB gzipped.
+- **Deploy:** merge the backend's `dev` into `main` first (Render), then the UI's. Once that UI is in production, nothing calls `/api/dashboard*`, `/api/roadmap*` or `/api/static-roadmap*`, and 6c can delete them after launch.
+- **Tests:** e2e: the old URLs lead to the topics. 56 e2e tests pass.
 
 ## Phase 7: hosting and launch
 - **Vercel:** use the UI's Vercel project, or create one if it isn't on Vercel yet. Framework preset Angular, build `npm run build`, output `dist/browser`, production branch `main`.

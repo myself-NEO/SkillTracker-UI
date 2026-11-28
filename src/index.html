@@ -8,12 +8,12 @@
     <meta name="description" content="Play a round of Snake, then log in to level up your software engineering skills: Java, DSA, LLD and HLD.">
     <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
     <!-- The theme, set before the first paint so no page flashes the wrong one (ThemeService takes
-         over once the app runs). Snake, the login and the old dashboard pages are dark-only; the
+         over once the app runs). Snake and the login are dark-only; the
          learning pages follow the visitor's choice, or else their system setting. -->
     <script>
       (function () {
         try {
-          var darkOnly = /^\/(home|login|dashboard|roadmaps)?\/?$/.test(location.pathname);
+          var darkOnly = /^\/(home|login)?\/?$/.test(location.pathname);
           var saved = localStorage.getItem('theme');
           var dark = darkOnly || saved === 'dark' || (saved !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
           var root = document.documentElement;

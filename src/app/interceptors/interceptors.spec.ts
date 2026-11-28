@@ -43,10 +43,10 @@ describe('HTTP interceptors', () => {
   it('adds the saved token to /api calls only', () => {
     localStorage.setItem('sde_prep_token', 'abc.def.ghi');
 
-    http.get('/api/dashboard').subscribe();
+    http.get('/api/state').subscribe();
     http.get('/assets/logo.svg').subscribe();
 
-    expect(backend.expectOne(`${API_BASE_URL}/api/dashboard`).request.headers.get('Authorization')).toBe('Bearer abc.def.ghi');
+    expect(backend.expectOne(`${API_BASE_URL}/api/state`).request.headers.get('Authorization')).toBe('Bearer abc.def.ghi');
     expect(backend.expectOne('/assets/logo.svg').request.headers.has('Authorization')).toBe(false);
     backend.match(() => true).forEach((r) => r.flush({}));
   });
@@ -60,8 +60,8 @@ describe('HTTP interceptors', () => {
     localStorage.setItem('sde_prep_token', 'abc.def.ghi');
     const logout = vi.spyOn(TestBed.inject(AuthService), 'logout');
 
-    http.get('/api/dashboard').subscribe({ error: () => {} });
-    backend.expectOne(`${API_BASE_URL}/api/dashboard`).flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
+    http.get('/api/state').subscribe({ error: () => {} });
+    backend.expectOne(`${API_BASE_URL}/api/state`).flush({ message: 'Unauthorized' }, { status: 401, statusText: 'Unauthorized' });
 
     expect(logout).toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith(['/home']);
