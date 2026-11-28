@@ -7,6 +7,7 @@
 //   public/content/<topic>/problems/<slug>.json         a problem breakdown (ContentDoc)
 //   public/content/dsa/cheatsheets/<slug>.json          a DSA cheat sheet (ContentDoc)
 //   public/content/dsa/practice.json                   the DSA coding-question list and cheat sheet index
+//   public/content/java/interview-questions.json       the Java question bank's titles by question id (notebook)
 //   public/content/visualize.json                      the animation gallery's scenes
 //   public/search-index.json                          the ⌘K search index
 import { createHash } from 'node:crypto';
@@ -16,8 +17,9 @@ import { gzipSync } from 'node:zlib';
 import { CHEATSHEETS } from '@content/dsa/cheatsheets';
 import { LEETCODE_PROBLEMS } from '@content/dsa/problems';
 import { PRACTICE_TOPICS } from '@content/dsa/practiceTopics';
+import { INTERVIEW_TOPICS, parseInterviewTopic } from '@content/java/interview';
 import { hasProblemBody } from '@content/shared/loaders';
-import type { ContentIndex, IndexTopic, TrackFile, VisualizeIndex } from '@lib/content/catalog';
+import type { ContentIndex, IndexTopic, JavaQuestionIndex, TrackFile, VisualizeIndex } from '@lib/content/catalog';
 import type { ContentDoc } from '@lib/content/doc';
 import { topicStats } from '@lib/content/stats';
 import { findLesson, flattenLessons, TRACKS } from '@lib/content/tracks';
@@ -114,6 +116,15 @@ for (const sheet of CHEATSHEETS) {
   await renderTo(path.join(OUT_DIR, 'dsa', 'cheatsheets', `${sheet.slug}.json`), read('dsa', 'cheatsheets', `${sheet.slug}.md`), TRACKS.dsa.basePath);
 }
 write(path.join(OUT_DIR, 'dsa', 'practice.json'), { topics: PRACTICE_TOPICS, problems: LEETCODE_PROBLEMS, cheatsheets: CHEATSHEETS });
+
+// The Java question bank's titles by id: questions flagged for revision are named in the notebook.
+const javaQuestions: JavaQuestionIndex = {};
+for (const topic of INTERVIEW_TOPICS) {
+  for (const question of parseInterviewTopic(topic.id, read('java', 'interview', `${topic.id}.md`))) {
+    javaQuestions[question.id] = { title: question.title, topic: question.topic };
+  }
+}
+write(path.join(OUT_DIR, 'java', 'interview-questions.json'), javaQuestions);
 
 // The animation gallery: every scene with its default parameters and highlighted code.
 const visualize: VisualizeIndex = { scenes: [] };

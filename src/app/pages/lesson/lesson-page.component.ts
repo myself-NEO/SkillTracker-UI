@@ -2,10 +2,13 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { RouterLink } from '@angular/router';
 import { flattenLessons } from '@content/shared/curriculum';
 import type { LessonMeta } from '@content/shared/types';
+import { lessonNotePlaceholder } from '@lib/content/practice';
 import { lessonPath } from '@lib/markdown/links';
 import { TOPICS } from '@lib/topics';
 import type { LessonData, PageResult } from '../../core/content.resolvers';
 import { ProgressStore } from '../../core/progress.store';
+import { NotesBoxComponent } from '../../notebook/notes-box.component';
+import { LessonToolsComponent } from '../../notebook/revision-tools';
 import { LevelBadgeComponent } from '../../ui/level-badge.component';
 import { LoadErrorComponent } from '../../ui/load-error.component';
 import { lessonState, StatusIconComponent } from '../../ui/status-icon.component';
@@ -20,7 +23,7 @@ import {
   RailLinksComponent,
   StarGlyphComponent,
 } from '../article/article-parts';
-import { LessonBodyComponent } from '../article/lesson-body.component';
+import { type BodyPage, LessonBodyComponent } from '../article/lesson-body.component';
 import { CurriculumSidebarComponent } from '../article/sidebars.component';
 import { NotFoundComponent } from '../not-found/not-found-page.component';
 import { stageAnchor } from '../topic/stage-section.component';
@@ -28,7 +31,8 @@ import { stageAnchor } from '../topic/stage-section.component';
 /**
  * A lesson (/:topic/:lesson): the curriculum sidebar, the article with what it covers and what to
  * read first, "mark complete", and the previous and next lessons. Ported from TheSWEguide's
- * [topic]/[lesson]/page.tsx; the notebook tools (bookmarks, notes) follow in Phase 5.
+ * [topic]/[lesson]/page.tsx. Topics with a notebook add its tools: the bookmark and "difficult"
+ * chips, bookmarks and Save buttons in the body, and "My notes".
  */
 @Component({
   selector: 'app-lesson-page',
@@ -48,6 +52,8 @@ import { stageAnchor } from '../topic/stage-section.component';
     RailLinksComponent,
     NotFoundComponent,
     LoadErrorComponent,
+    LessonToolsComponent,
+    NotesBoxComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './lesson-page.component.html',
@@ -66,6 +72,21 @@ export class LessonPageComponent {
   protected readonly info = computed(() => TOPICS.find((topic) => topic.id === this.data()!.track.id)!);
   protected readonly lessons = computed(() => flattenLessons(this.data()!.track));
   protected readonly resume = computed(() => ({ track: this.data()!.track.id, slug: this.lesson().slug }));
+  protected readonly notePlaceholder = computed(() => lessonNotePlaceholder(this.data()!.track));
+
+  /** The page the body's widgets and notebook tools record against. */
+  protected readonly bodyPage = computed((): BodyPage => {
+    const { track, location } = this.data()!;
+    const lesson = location.lesson;
+    return {
+      track: track.id,
+      kind: 'lesson',
+      slug: lesson.slug,
+      notebook: track.notebook
+        ? { title: lesson.title, topic: location.stage.id, href: lessonPath(track.basePath, lesson.slug) }
+        : undefined,
+    };
+  });
 
   protected readonly breadcrumb = computed(() => {
     const { track, location } = this.data()!;

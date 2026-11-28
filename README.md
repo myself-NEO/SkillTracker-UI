@@ -95,11 +95,20 @@ decides where Google sign-in may return.
   share: the three-column layout, the sidebars, and the body renderer, which mounts the interactive
   parts into the build's HTML. `src/app/widgets`: those parts (quiz, drill, checklist, estimator).
   `src/app/viz`: the animation player, its seven scenes, and the FLIP motion they move with.
-  `src/app/ui`: smaller shared pieces (progress bars and icons, topic glyphs, the hub's map).
-- `src/app/core`: the theme, the learner's progress and checklist ticks, the generated content files
-  and their route resolvers, scrolling and page titles. Progress and ticks are kept in this browser
-  per account (`user-storage.ts`) and saved to the account in the background (`state-sync.service.ts`,
-  `GET`/`PATCH /api/state`). The header shows whether the latest changes have been saved.
+  `src/app/ui`: smaller shared pieces (progress bars and icons, topic glyphs, the hub's map, and
+  `markdown.component.ts`, which shows Markdown the learner wrote).
+- The revision notebook (Java, LLD, HLD): `src/app/notebook` holds its tools on lesson and problem
+  pages (bookmarks, the "difficult" and "revisit" flags, "My notes"), and `pages/notebook` the
+  notebook page (`/java/notebook`), with backup export and import. Backups use TheSWEguide's format
+  (`src/lib/progress/backup.ts`), so its backups import here.
+- `src/app/core`: the theme, the learner's progress, checklist ticks and notebook, the generated
+  content files and their route resolvers, scrolling and page titles. Progress, ticks and the
+  notebook are kept in this browser per account (`user-storage.ts`) and saved to the account in the
+  background (`state-sync.service.ts`, `GET`/`PATCH /api/state`). The header shows whether the
+  latest changes have been saved.
+- `src/lib/markdown/client.ts`: notes and saved answers are Markdown. They are rendered in the
+  browser by building the page elements from the parsed Markdown against an allowlist, never by
+  using the text as HTML.
 - `src/app/components`: the screens from before the redesign: Snake (`home`), `login`, `dashboard`,
   `roadmaps` and the old `navbar`.
 - `src/app/services`: API access and the sign-in state (`auth.service.ts`).

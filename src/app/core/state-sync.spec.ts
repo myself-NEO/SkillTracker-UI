@@ -154,4 +154,27 @@ describe('StateSync', () => {
     await advance(60_000);
     http.expectNone('/api/state/progress');
   });
+
+  it('as the page closes, stores what is still waiting and sends it without waiting for the answer', async () => {
+    await signIn();
+    answerRead();
+    await advance(0);
+    const fetch = vi.fn().mockResolvedValue(new Response('{}'));
+    vi.stubGlobal('fetch', fetch);
+    // e.g. a note still waiting for a pause in typing
+    sync.beforeExit(() => storage.update((s) => ({ lessons: { ...s.lessons, 'java:late': 9 } })));
+
+    window.dispatchEvent(new Event('pagehide'));
+    vi.unstubAllGlobals();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    const [url, init] = fetch.mock.calls[0] as [string, RequestInit];
+    expect(url).toMatch(/\/api\/state\/progress$/);
+    expect(init).toMatchObject({ method: 'PATCH', keepalive: true });
+    expect(JSON.parse(init.body as string)).toEqual({ lessons: { 'java:late': 9 } });
+
+    // If that request is lost, the usual save sends the same change again.
+    await advance(3000);
+    expectSave().flush({ data: { lessons: { 'java:late': 9 } } });
+    await advance(0);
+  });
 });

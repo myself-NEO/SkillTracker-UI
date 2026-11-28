@@ -2,12 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { RouterLink } from '@angular/router';
 import { findLesson } from '@content/shared/curriculum';
 import { DEFAULT_PROBLEM_STATUSES, type LessonMeta } from '@content/shared/types';
-import { practiceCopy } from '@lib/content/practice';
+import { practiceCopy, problemNotePlaceholder } from '@lib/content/practice';
 import { LEVEL_NAME } from '@lib/format';
 import { lessonPath, problemPath } from '@lib/markdown/links';
 import { TOPICS } from '@lib/topics';
 import type { PageResult, ProblemData } from '../../core/content.resolvers';
 import { ProgressStore } from '../../core/progress.store';
+import { NotesBoxComponent } from '../../notebook/notes-box.component';
+import { RevisitToggleComponent } from '../../notebook/revision-tools';
 import { LevelBadgeComponent } from '../../ui/level-badge.component';
 import { LoadErrorComponent } from '../../ui/load-error.component';
 import { lessonState, StatusIconComponent } from '../../ui/status-icon.component';
@@ -19,14 +21,14 @@ import {
   PrevNextComponent,
   ProblemStatusPickerComponent,
 } from '../article/article-parts';
-import { LessonBodyComponent } from '../article/lesson-body.component';
+import { type BodyPage, LessonBodyComponent } from '../article/lesson-body.component';
 import { ProblemSidebarComponent, problemsInOrder } from '../article/sidebars.component';
 import { NotFoundComponent } from '../not-found/not-found-page.component';
 
 /**
  * A practice problem (/:topic/problems/:problem, Java, LLD and HLD): how to practise it, the
  * learner's status, the lessons to review first, and the step-by-step breakdown. Ported from
- * TheSWEguide's problems/[problem]/page.tsx; the notebook's notes and "revisit" flag follow in Phase 5.
+ * TheSWEguide's problems/[problem]/page.tsx, with the notebook's "Revisit later" flag and notes.
  */
 @Component({
   selector: 'app-problem-page',
@@ -44,6 +46,8 @@ import { NotFoundComponent } from '../not-found/not-found-page.component';
     PrevNextComponent,
     NotFoundComponent,
     LoadErrorComponent,
+    RevisitToggleComponent,
+    NotesBoxComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -105,12 +109,15 @@ import { NotFoundComponent } from '../not-found/not-found-page.component';
             <div class="mt-6 flex flex-wrap items-center gap-3 border-t border-border pt-5">
               <span class="text-sm font-medium text-fg-soft">Your status</span>
               <app-problem-status-picker [track]="view.track.id" [slug]="view.problem.slug" [statuses]="statuses()" />
+              @if (view.track.notebook) {
+                <app-revisit-toggle [track]="view.track.id" [slug]="view.problem.slug" />
+              }
             </div>
           </section>
 
           <div class="mt-10">
             @if (view.doc; as doc) {
-              <app-lesson-body [doc]="doc" [page]="{ track: view.track.id, kind: 'problem', slug: view.problem.slug }" />
+              <app-lesson-body [doc]="doc" [page]="bodyPage()" />
             } @else {
               <div class="rounded-xl border border-dashed border-border-strong p-6">
                 <p class="font-semibold">{{ copy().comingSoon?.title ?? 'This breakdown hasn’t been written yet' }}</p>
@@ -120,6 +127,18 @@ import { NotFoundComponent } from '../not-found/not-found-page.component';
               </div>
             }
           </div>
+
+          @if (view.track.notebook) {
+            <app-notes-box
+              [track]="view.track.id"
+              kind="problem"
+              [slug]="view.problem.slug"
+              [title]="view.problem.title"
+              topic="problems"
+              [placeholder]="notePlaceholder()"
+              [notebookHref]="view.track.basePath + '/notebook'"
+            />
+          }
 
           <footer class="mt-10">
             <app-prev-next [previous]="neighbour(-1)" [next]="neighbour(1)" />
@@ -142,6 +161,20 @@ export class ProblemPageComponent {
   protected readonly info = computed(() => TOPICS.find((topic) => topic.id === this.data()!.track.id)!);
   protected readonly copy = computed(() => practiceCopy(this.data()!.track));
   protected readonly statuses = computed(() => this.data()!.track.problemStatuses ?? DEFAULT_PROBLEM_STATUSES);
+  protected readonly notePlaceholder = computed(() => problemNotePlaceholder(this.data()!.track));
+
+  /** The page the body's widgets and notebook tools record against. */
+  protected readonly bodyPage = computed((): BodyPage => {
+    const { track, problem } = this.data()!;
+    return {
+      track: track.id,
+      kind: 'problem',
+      slug: problem.slug,
+      notebook: track.notebook
+        ? { title: problem.title, topic: 'problems', href: problemPath(track.basePath, problem.slug) }
+        : undefined,
+    };
+  });
   protected readonly breadcrumb = computed(() => {
     const { track, problem } = this.data()!;
     return [

@@ -1,90 +1,35 @@
 import { cx, escapeHtml } from '@lib/html';
+import { CALLOUT_STYLES, ICON_ATTRIBUTES, REVEAL_STYLES, revealClasses, type RevealKind } from '@lib/markdown/blocks';
 
 // The static markup of a lesson body: callouts, reveal blocks, code blocks and the problem notice
 // of a broken animation block. The same markup and Tailwind classes as TheSWEguide's React
-// components (components/markdown/*). The class strings live in this file, which Tailwind scans
+// components (components/markdown/*). The class strings live in this file and in
+// src/lib/markdown/blocks.ts (shared with the browser's Markdown renderer), which Tailwind scans
 // (styles.css → @source), because the generated JSON itself is git-ignored and never scanned.
 
-const icon = (path: string, className = 'size-4 shrink-0') =>
-  `<svg class="${className}" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${path}"/></svg>`;
+export {
+  calloutClasses,
+  isRevealKind,
+  REVEAL_KINDS,
+  type RevealKind,
+  revealTitle,
+  TABLE_CLASS,
+  TABLE_WRAPPER_CLASS,
+} from '@lib/markdown/blocks';
 
-const BULB = 'M7.5 14.5h5M8.25 17.25h3.5M10 2.75a5 5 0 00-3 9c.6.45 1 1.1 1 1.85v.9h4v-.9c0-.75.4-1.4 1-1.85a5 5 0 00-3-9z';
+const ICON_OPEN = `<svg ${Object.entries(ICON_ATTRIBUTES)
+  .map(([name, value]) => `${name}="${value}"`)
+  .join(' ')}>`;
+const icon = (path: string) => `${ICON_OPEN}<path d="${path}"/></svg>`;
 
 // --- Callouts: `> [!NOTE|TIP|WARNING|INTERVIEW] Optional title` ---------------------------------
 
-export const CALLOUTS: Record<string, { label: string; icon: string; classes: string; titleClass: string }> = {
-  note: {
-    label: 'Note',
-    icon: icon('M10 17.5a7.5 7.5 0 100-15 7.5 7.5 0 000 15zM10 9v4.5M10 6.25v.01'),
-    classes: 'border-info/30 border-l-info bg-info-soft',
-    titleClass: 'text-info',
-  },
-  tip: {
-    label: 'Tip',
-    icon: icon(BULB),
-    classes: 'border-success/30 border-l-success bg-success-soft',
-    titleClass: 'text-success',
-  },
-  warning: {
-    label: 'Watch out',
-    icon: icon('M10 3.25l7.5 13H2.5l7.5-13zM10 8.5v3.5M10 14.25v.01'),
-    classes: 'border-warning/30 border-l-warning bg-warning-soft',
-    titleClass: 'text-warning',
-  },
-  interview: {
-    label: 'Interview insight',
-    icon: icon('M10 17.5a7.5 7.5 0 100-15 7.5 7.5 0 000 15zM10 13.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5zM10 10.25v-.5'),
-    classes: 'border-insight/30 border-l-insight bg-insight-soft',
-    titleClass: 'text-insight',
-  },
-};
-
-/** Classes of a callout: the box, its title line and its body (kept here so Tailwind sees them). */
-export const calloutClasses = (type: string) => ({
-  box: `my-6 rounded-xl border border-l-4 ${CALLOUTS[type].classes} px-4 py-3`,
-  title: `!mt-0 !mb-1 flex items-center gap-2 text-sm font-semibold ${CALLOUTS[type].titleClass}`,
-  body: 'text-[15px] [&_li]:my-0.5 [&_ol]:my-1.5 [&_p]:my-1.5 [&_ul]:my-1.5 [&>*:last-child]:mb-0',
-});
-
-/** Wide tables scroll inside their own box instead of stretching the page. */
-export const TABLE_WRAPPER_CLASS = 'render-when-near my-6 overflow-x-auto rounded-xl border border-border';
-export const TABLE_CLASS = 'my-0! min-w-full';
+/** Each callout type's style, with its icon as HTML. */
+export const CALLOUTS: Record<string, { label: string; icon: string; classes: string; titleClass: string }> = Object.fromEntries(
+  Object.entries(CALLOUT_STYLES).map(([type, style]) => [type, { ...style, icon: icon(style.iconPath) }]),
+);
 
 // --- Reveal blocks: ````hint / ````solution / ````reveal / ````question title="…" ----------------
-
-export const REVEAL_KINDS = ['hint', 'solution', 'reveal', 'question'] as const;
-export type RevealKind = (typeof REVEAL_KINDS)[number];
-
-export const isRevealKind = (value: string | undefined): value is RevealKind =>
-  (REVEAL_KINDS as readonly string[]).includes(value ?? '');
-
-const REVEAL_STYLES: Record<RevealKind, { icon: string; defaultTitle: string; classes: string; summaryClass: string }> = {
-  hint: { icon: icon(BULB), defaultTitle: 'Hint', classes: 'border-warning/35', summaryClass: 'text-warning' },
-  solution: {
-    icon: icon('M10 17.5a7.5 7.5 0 100-15 7.5 7.5 0 000 15zM6.75 10.25l2.25 2.25 4.25-4.75'),
-    defaultTitle: 'Reference solution',
-    classes: 'border-success/35',
-    summaryClass: 'text-success',
-  },
-  reveal: {
-    icon: icon(
-      'M1.75 10S4.75 4.25 10 4.25 18.25 10 18.25 10 15.25 15.75 10 15.75 1.75 10 1.75 10zM10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z',
-    ),
-    defaultTitle: 'Show explanation',
-    classes: 'border-border-strong',
-    summaryClass: 'text-fg',
-  },
-  question: {
-    icon: icon(
-      'M4.25 15.5l-1 2.25 3.5-1.25A7.5 7.5 0 1010 2.5a7.5 7.5 0 00-5.75 12.5zM7.75 8a2.25 2.25 0 114 1.4c-.6.5-1.75.9-1.75 2.1M10 13.75v.01',
-    ),
-    defaultTitle: 'Interview question',
-    classes: 'border-insight/35',
-    summaryClass: 'text-insight',
-  },
-};
-
-export const revealTitle = (kind: RevealKind, title: string | undefined) => title ?? REVEAL_STYLES[kind].defaultTitle;
 
 /**
  * A collapsed block that works without script. `data-reveal` tells the app to track hint and
@@ -92,17 +37,17 @@ export const revealTitle = (kind: RevealKind, title: string | undefined) => titl
  * `[data-slot="question-bookmark"]` where the app puts its notebook bookmark button.
  */
 export const revealHtml = (kind: RevealKind, heading: string, bodyHtml: string, questionId?: string) => {
-  const style = REVEAL_STYLES[kind];
+  const classes = revealClasses(kind);
   const question = questionId ? ` data-question="${escapeHtml(questionId)}"` : '';
   return (
-    `<details class="group my-5 rounded-xl border bg-surface ${style.classes}" data-reveal="${kind}"${question}>` +
-    `<summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm font-semibold ${style.summaryClass} group-open:rounded-b-none hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent [&::-webkit-details-marker]:hidden">` +
-    `<span class="flex min-w-0 items-center gap-2">${style.icon}${escapeHtml(heading)}</span>` +
+    `<details class="${classes.details}" data-reveal="${kind}"${question}>` +
+    `<summary class="${classes.summary}">` +
+    `<span class="flex min-w-0 items-center gap-2">${icon(REVEAL_STYLES[kind].iconPath)}${escapeHtml(heading)}</span>` +
     `<span class="flex shrink-0 items-center gap-2">${questionId ? '<span data-slot="question-bookmark"></span>' : ''}` +
     `<span class="text-xs font-medium text-muted group-open:hidden">Show</span>` +
     `<span class="hidden text-xs font-medium text-muted group-open:inline">Hide</span></span>` +
     `</summary>` +
-    `<div class="border-t border-border px-4 py-4 sm:px-5 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">${bodyHtml}</div>` +
+    `<div class="${classes.body}">${bodyHtml}</div>` +
     `</details>`
   );
 };

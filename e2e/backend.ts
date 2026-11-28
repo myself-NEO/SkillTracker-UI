@@ -100,13 +100,34 @@ export async function clearProgress(token: string, patch: Record<string, Record<
   }
 }
 
-/** The account's progress document as the server has it. */
-export async function serverProgress(token: string): Promise<Record<string, Record<string, unknown>>> {
+/** Empties the account's notebook, so a test starts from the same place every run. */
+export async function resetNotebook(token: string) {
+  const fields = ['saved', 'difficult', 'revise', 'questions', 'notes', 'snippets', 'reviewed'];
   const api = await request.newContext();
   try {
-    const response = await api.get(`${API}/api/state`, { headers: { Authorization: `Bearer ${token}` } });
-    return (await response.json()).documents?.progress?.data ?? {};
+    const response = await api.patch(`${API}/api/state/notebook`, {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/merge-patch+json' },
+      data: Object.fromEntries(fields.map((field) => [field, null])),
+    });
+    if (!response.ok()) throw new Error(`Could not reset the e2e account's notebook: ${response.status()}`);
   } finally {
     await api.dispose();
   }
 }
+
+/** One of the account's documents as the server has it. */
+async function serverDocument(token: string, kind: 'progress' | 'notebook'): Promise<Record<string, Record<string, unknown>>> {
+  const api = await request.newContext();
+  try {
+    const response = await api.get(`${API}/api/state`, { headers: { Authorization: `Bearer ${token}` } });
+    return (await response.json()).documents?.[kind]?.data ?? {};
+  } finally {
+    await api.dispose();
+  }
+}
+
+/** The account's progress document as the server has it. */
+export const serverProgress = (token: string) => serverDocument(token, 'progress');
+
+/** The account's notebook as the server has it. */
+export const serverNotebook = (token: string) => serverDocument(token, 'notebook');

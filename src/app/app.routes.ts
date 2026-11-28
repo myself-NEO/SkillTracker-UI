@@ -1,4 +1,5 @@
 import { Route, Routes } from '@angular/router';
+import { hasSection } from '@lib/sections';
 import { TOPIC_IDS, TOPICS, type TopicId } from '@lib/topics';
 import { authGuard, guestGuard, signedInMatch } from './auth.guard';
 import { HomeComponent } from './components/home/home.component';
@@ -8,6 +9,7 @@ import {
   cheatsheetTitleResolver,
   contentIndexResolver,
   dsaPracticeResolver,
+  javaQuestionsResolver,
   lessonResolver,
   lessonSlugMatch,
   lessonTitleResolver,
@@ -38,6 +40,7 @@ const libraryPage = () =>
   import('./pages/problems/problem-library-page.component').then((m) => m.ProblemLibraryPageComponent);
 const cheatsheetPage = () => import('./pages/cheatsheet/cheatsheet-page.component').then((m) => m.CheatsheetPageComponent);
 const estimatorPage = () => import('./pages/estimator/estimator-page.component').then((m) => m.EstimatorPageComponent);
+const notebookPage = () => import('./pages/notebook/notebook-page.component').then((m) => m.NotebookPageComponent);
 
 /**
  * One topic's pages, e.g. /java. The topic is in the route data; its curriculum is resolved once for
@@ -69,6 +72,16 @@ const topicRoute = (topic: TopicId): Route => ({
           },
         ]),
     ...(topic === 'hld' ? [{ path: 'estimator', title: 'Capacity estimator · HLD', loadComponent: estimatorPage }] : []),
+    ...(hasSection(topic, 'notebook')
+      ? [
+          {
+            path: 'notebook',
+            title: `${TOPICS.find((info) => info.id === topic)!.shortTitle} revision notebook`,
+            resolve: topic === 'java' ? { questions: javaQuestionsResolver } : {},
+            loadComponent: notebookPage,
+          },
+        ]
+      : []),
     {
       path: ':lesson',
       canMatch: [lessonSlugMatch],

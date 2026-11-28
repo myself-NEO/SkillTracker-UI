@@ -132,7 +132,7 @@ test.describe('reading (needs the local backend)', () => {
   });
 
   test('pages not ported yet say so', async ({ page }) => {
-    await page.goto('/java/notebook');
+    await page.goto('/java/progress');
     await expect(page.getByRole('heading', { level: 1, name: 'This page is on its way' })).toBeVisible();
     await page.goto('/java/no-such-lesson');
     await expect(page.getByRole('heading', { level: 1, name: 'This page doesn’t exist' })).toBeVisible();

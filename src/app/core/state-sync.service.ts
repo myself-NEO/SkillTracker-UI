@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { effect, inject, Injectable, signal, untracked } from '@angular/core';
+import { DestroyRef, effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL } from '../config/api-base-url';
 import { AuthService } from '../services/auth.service';
@@ -50,6 +50,7 @@ export class StateSync {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
   private readonly documents = new Map<StateKind, SyncedDocument>();
+  private readonly exitHooks = new Set<() => void>();
 
   readonly status = signal<SyncStatus>('idle');
 
@@ -69,10 +70,17 @@ export class StateSync {
       untracked(() => this.switchUser(userId));
     });
     if (typeof window !== 'undefined') {
-      window.addEventListener('pagehide', () => this.sendOnExit());
-      document.addEventListener('visibilitychange', () => {
+      const onPageHide = () => this.sendOnExit();
+      const onVisibilityChange = () => {
         if (document.visibilityState === 'hidden') this.sendOnExit();
         else if (this.user && Date.now() - this.readAt > REFRESH_AFTER_MS) this.refresh();
+      };
+      window.addEventListener('pagehide', onPageHide);
+      document.addEventListener('visibilitychange', onVisibilityChange);
+      inject(DestroyRef).onDestroy(() => {
+        window.removeEventListener('pagehide', onPageHide);
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+        clearTimeout(this.timer);
       });
     }
   }
@@ -88,6 +96,15 @@ export class StateSync {
     if (!this.user) return;
     if (this.status() !== 'offline' && this.status() !== 'error') this.status.set('pending');
     this.schedule(DEBOUNCE_MS);
+  }
+
+  /**
+   * Runs `flush` just before the last save as the page closes or is hidden, e.g. to store a note
+   * still waiting for a pause in typing, so it goes out too. Returns a function that removes it.
+   */
+  beforeExit(flush: () => void): () => void {
+    this.exitHooks.add(flush);
+    return () => this.exitHooks.delete(flush);
   }
 
   /** Reads the server's copy again (another device may have saved). */
@@ -203,6 +220,7 @@ export class StateSync {
    * doesn't arrive, it is sent again next time (from the difference with the server's copy).
    */
   private sendOnExit() {
+    for (const flush of [...this.exitHooks]) flush();
     const token = this.auth.getToken();
     if (!this.user || !token || this.needsRead || typeof fetch !== 'function') return;
     for (const [kind, document] of this.documents) {

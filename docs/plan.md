@@ -291,6 +291,38 @@ Split into three, each with its own review:
   - The e2e tests use one account per Playwright project and sign each in once per run (`e2e/global-setup.ts`).
 - Deploy the backend first. Until `/api/state` is live, the new UI shows "Offline" and keeps retrying, and progress stays in the browser only. The current backend answers 500 for a path it doesn't have (its catch-all exception handler, Phase 0d), and the UI reads that as unreachable.
 
+**Phase 5b (done 2026-11-28, in review): the notebook and backups.**
+- **The notebook store** (`core/notebook.store.ts`, model in `lib/progress/notebook.ts`):
+  - TheSWEguide's shape and keys, saved to the account as the `notebook` document.
+  - Its sanitizer checks every entry, since the notebook page shows their text, and keeps only links to pages of the app.
+- **On lesson and problem pages of Java, LLD and HLD:**
+  - "Bookmark lesson" and "Mark as difficult" under a lesson's title; "Revisit later" beside a problem's status.
+  - A bookmark beside each section heading of a lesson (on hover; always shown on touch screens), and on each interview question, which saves its model answer too.
+  - "Save" on code blocks and on diagrams.
+  - "My notes" at the end, saved as you type. A note still waiting for the pause in typing is saved when you move to another page or close this one, just before the last save to the account (`StateSync.beforeExit`). TheSWEguide lost it.
+- **`/:topic/notebook`** (Java, LLD, HLD), with search and a topic filter. Its tabs:
+  - the revision list: difficult lessons, flagged problems and questions, missed quiz questions, and mock-interview gaps;
+  - saved lessons and sections, and saved questions;
+  - notes, with LLD's and HLD's kinds and templates;
+  - code, and diagrams (draw and edit Mermaid, with a preview).
+- **Notes and saved answers render in the browser** (`lib/markdown/client.ts`), in the lessons' Markdown dialect.
+  - The text is never used as HTML. The Markdown is parsed to a syntax tree, and the page elements are created from it against an allowlist, with safe URLs only.
+  - The plan said Angular's sanitizer, but that would strip the callouts' icons and the diagrams.
+  - The renderer loads with the first note shown: 41 KB gzipped.
+  - Callout and reveal-block styles moved to `lib/markdown/blocks.ts`, shared with the build. The generated lesson files are byte-identical.
+- **Backups** (`lib/progress/backup.ts`, on the notebook page):
+  - Export writes TheSWEguide's format, version 1, as `neolevelup-backup-<date>.json`.
+  - Import reads TheSWEguide's backups or ours, says what the file holds, and adds it to the account.
+  - Nothing is removed. Where both have the same item, the more recently changed one is kept.
+- **The content build** writes `java/interview-questions.json`: the Java bank's 161 question titles, 6 KB gzipped. The Java notebook names questions flagged for revision with it.
+- **Tests:**
+  - the notebook model, backups and merging, the revision list, and the Markdown renderer, including unsafe input;
+  - the lesson body's tools and the notes box;
+  - e2e: from the lesson tools to the notebook and the account, and importing a TheSWEguide backup through "Import backup".
+- **Not in 5b:**
+  - the progress pages, DSA's coding-question tracker and its notes page (5c);
+  - Java's interview bank (Phase 6), where questions are flagged and rated.
+
 ## Phase 6: Mock Interview tab, and removing Dashboard and Roadmaps
 Split into three:
 - **6a:** the Mock Interview tab.

@@ -1,0 +1,236 @@
+<div class="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 sm:flex-row">
+  <label class="relative block flex-1">
+    <span class="sr-only">Search your notebook</span>
+    <svg appSearchIcon class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-faint"></svg>
+    <input
+      type="search"
+      [value]="query()"
+      (input)="query.set($any($event.target).value)"
+      placeholder="Search everything you saved"
+      [class]="inputClass + ' pl-9'"
+    />
+  </label>
+  <app-topic-select
+    [topics]="topics()"
+    [(value)]="topic"
+    [selectId]="index().track + '-notebook-topic'"
+    label="Filter by topic"
+    [includeAll]="true"
+  />
+</div>
+
+<div
+  role="tablist"
+  aria-label="Notebook sections"
+  (keydown)="onTabKeys($event)"
+  class="mt-6 flex [scrollbar-width:none] gap-1 overflow-x-auto border-b border-border [&::-webkit-scrollbar]:hidden"
+>
+  @for (item of tabs(); track item.id) {
+    <button
+      [id]="'notebook-tab-' + item.id"
+      type="button"
+      role="tab"
+      [attr.aria-selected]="tab() === item.id"
+      [attr.aria-controls]="'notebook-panel-' + item.id"
+      [tabIndex]="tab() === item.id ? 0 : -1"
+      (click)="select(item.id)"
+      class="-mb-px inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium whitespace-nowrap transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset"
+      [class]="tab() === item.id ? 'border-accent text-fg' : 'border-transparent text-muted hover:text-fg'"
+    >
+      {{ item.label }}
+      <span
+        class="rounded-full px-1.5 text-[11px] tabular-nums"
+        [class]="tab() === item.id ? 'bg-accent-soft text-accent' : 'bg-surface-2 text-muted'"
+        >{{ item.count }}</span
+      >
+    </button>
+  }
+</div>
+
+<div [id]="'notebook-panel-' + tab()" role="tabpanel" [attr.aria-labelledby]="'notebook-tab-' + tab()" class="mt-6">
+  @switch (tab()) {
+    @case ('revision') {
+      <label class="mb-4 inline-flex items-center gap-2 text-sm text-muted">
+        <input
+          type="checkbox"
+          [checked]="showReviewed()"
+          (change)="showReviewed.set($any($event.target).checked)"
+          class="accent-accent"
+        />
+        Show items already reviewed
+      </label>
+      @if (revisionShown().length === 0) {
+        <div class="rounded-xl border border-dashed border-border-strong px-5 py-10 text-center text-sm leading-6 text-muted">
+          @if (filtered()) {
+            Nothing on the revision list matches.
+          } @else {
+            Nothing to revise yet. Mark a lesson as difficult, flag a problem or question to revisit, or miss a quiz
+            question, and it lands here.
+          }
+        </div>
+      } @else {
+        <ul class="space-y-2">
+          @for (item of revisionShown(); track item.key) {
+            <li class="rounded-xl border border-border bg-surface p-4" [class.opacity-70]="!item.due">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <span class="inline-flex rounded-md border px-1.5 py-px text-[11px] font-semibold" [class]="kinds[item.kind].classes">{{
+                    kinds[item.kind].label
+                  }}</span>
+                  <p class="mt-1.5 font-medium text-fg">
+                    @if (item.href; as href) {
+                      <a [appHref]="href" class="hover:text-accent">{{ item.title }}</a>
+                    } @else {
+                      {{ item.title }}
+                    }
+                  </p>
+                  <p class="mt-0.5 text-xs text-muted">
+                    {{ item.context }} · flagged {{ date(item.flaggedAt) }}
+                    @if (item.reviewedAt && !item.due) {
+                      · reviewed {{ date(item.reviewedAt) }}
+                    }
+                  </p>
+                </div>
+                <div class="flex shrink-0 gap-2">
+                  <button type="button" [class]="button" (click)="store.markReviewed(item.key, item.due)">
+                    {{ item.due ? 'Mark reviewed' : 'Review again' }}
+                  </button>
+                  @if (item.flag) {
+                    <button type="button" [class]="button" (click)="removeFlag(item)">Remove flag</button>
+                  }
+                </div>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    }
+
+    @case ('saved') {
+      @if (saved().length === 0) {
+        <div class="rounded-xl border border-dashed border-border-strong px-5 py-10 text-center text-sm leading-6 text-muted">
+          @if (filtered()) {
+            No saved lessons or sections match.
+          } @else {
+            Bookmark a lesson from its header, or a section with the bookmark beside its heading.
+          }
+        </div>
+      } @else {
+        <ul class="space-y-2">
+          @for (item of saved(); track item.kind + ':' + item.ref) {
+            <li class="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-border bg-surface p-4">
+              <div class="flex min-w-0 items-start gap-3">
+                <svg appBookmarkIcon [filled]="true" class="mt-0.5 size-4 shrink-0 text-accent"></svg>
+                <div class="min-w-0">
+                  <a [appHref]="savedHref(item)" class="font-medium text-fg hover:text-accent">{{ item.title }}</a>
+                  <p class="mt-0.5 text-xs text-muted">
+                    {{ item.kind === 'section' ? 'Section of “' + item.context + '”' : item.context }} · saved {{ date(item.at) }}
+                  </p>
+                </div>
+              </div>
+              <button type="button" [class]="button" (click)="store.toggleSaved(item, false)">Remove</button>
+            </li>
+          }
+        </ul>
+      }
+    }
+
+    @case ('questions') {
+      @if (questions().length === 0) {
+        <div class="rounded-xl border border-dashed border-border-strong px-5 py-10 text-center text-sm leading-6 text-muted">
+          @if (filtered()) {
+            No saved questions match.
+          } @else {
+            Save an interview question with the bookmark on its block, and its model answer is kept here.
+          }
+        </div>
+      } @else {
+        <ul class="space-y-3">
+          @for (item of questions(); track item.ref) {
+            <li><app-question-card [item]="item" [basePath]="index().basePath" /></li>
+          }
+        </ul>
+      }
+    }
+
+    @case ('notes') {
+      @if (composing()) {
+        <app-note-form [index]="index()" [topics]="topics()" [settings]="settings()" (done)="composing.set(false)" />
+      } @else {
+        <button type="button" (click)="composing.set(true)" [class]="primary + ' mb-4'">New note</button>
+      }
+      @if (notes().length === 0) {
+        @if (!composing()) {
+          <div class="rounded-xl border border-dashed border-border-strong px-5 py-10 text-center text-sm leading-6 text-muted">
+            @if (filtered()) {
+              No notes match.
+            } @else {
+              Write a note here, or in the “My notes” box at the end of any lesson or problem.
+            }
+          </div>
+        }
+      } @else {
+        <ul class="mt-4 space-y-3">
+          @for (note of notes(); track note.id) {
+            <li>
+              <app-note-card
+                [note]="note"
+                [index]="index()"
+                [topics]="topics()"
+                [settings]="settings()"
+                [topicLabel]="topicLabel(note.topic)"
+              />
+            </li>
+          }
+        </ul>
+      }
+    }
+
+    @case ('code') {
+      @if (code().length === 0) {
+        <div class="rounded-xl border border-dashed border-border-strong px-5 py-10 text-center text-sm leading-6 text-muted">
+          @if (filtered()) {
+            No code matches.
+          } @else {
+            Use “Save” on any code example in a lesson or problem to keep it here.
+          }
+        </div>
+      } @else {
+        <ul class="space-y-3">
+          @for (snippet of code(); track snippet.id) {
+            <li><app-snippet-card [snippet]="snippet" [index]="index()" [topicLabel]="topicLabel(snippet.topic)" /></li>
+          }
+        </ul>
+      }
+    }
+
+    @case ('diagrams') {
+      @if (settings().diagrams) {
+        @if (composing()) {
+          <app-diagram-form [index]="index()" [topics]="topics()" (done)="composing.set(false)" />
+        } @else {
+          <button type="button" (click)="composing.set(true)" [class]="primary + ' mb-4'">New diagram</button>
+        }
+      }
+      @if (diagrams().length === 0) {
+        @if (!composing()) {
+          <div class="rounded-xl border border-dashed border-border-strong px-5 py-10 text-center text-sm leading-6 text-muted">
+            @if (filtered()) {
+              No diagrams match.
+            } @else {
+              Use “Save” on any diagram in a lesson or problem, or draw your own in Mermaid.
+            }
+          </div>
+        }
+      } @else {
+        <ul class="mt-4 space-y-4">
+          @for (snippet of diagrams(); track snippet.id) {
+            <li>
+              <app-diagram-card [snippet]="snippet" [index]="index()" [topics]="topics()" [topicLabel]="topicLabel(snippet.topic)" />
+            </li>
+          }
+        </ul>
+      }
+    }
+  }
+</div>
