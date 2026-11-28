@@ -7,7 +7,9 @@
 //   public/content/<topic>/problems/<slug>.json         a problem breakdown (ContentDoc)
 //   public/content/dsa/cheatsheets/<slug>.json          a DSA cheat sheet (ContentDoc)
 //   public/content/dsa/practice.json                   the DSA coding-question list and cheat sheet index
-//   public/content/java/interview-questions.json       the Java question bank's titles by question id (notebook)
+//   public/content/java/interview-questions.json       the Java question bank's titles by question id
+//   public/content/java/interview/<topic>.json         a topic of the Java question bank, rendered (and tricky.json)
+//   public/content/<lld|hld>/interview/<slug>.json      a problem's mock-interview script, parsed from its breakdown
 //   public/content/visualize.json                      the animation gallery's scenes
 //   public/search-index.json                          the ⌘K search index
 import { createHash } from 'node:crypto';
@@ -17,10 +19,21 @@ import { gzipSync } from 'node:zlib';
 import { CHEATSHEETS } from '@content/dsa/cheatsheets';
 import { LEETCODE_PROBLEMS } from '@content/dsa/problems';
 import { PRACTICE_TOPICS } from '@content/dsa/practiceTopics';
+import { parseInterviewScript } from '@content/hld/interview';
 import { INTERVIEW_TOPICS, parseInterviewTopic } from '@content/java/interview';
+import { parseLldInterviewScript } from '@content/lld/interview';
+import { TRICKY } from '@lib/interview/java-bank';
 import { hasProblemBody } from '@content/shared/loaders';
-import type { ContentIndex, IndexTopic, JavaQuestionIndex, TrackFile, VisualizeIndex } from '@lib/content/catalog';
-import type { ContentDoc } from '@lib/content/doc';
+import type {
+  ContentIndex,
+  IndexTopic,
+  JavaBankQuestion,
+  JavaQuestionIndex,
+  MockScriptFile,
+  TrackFile,
+  VisualizeIndex,
+} from '@lib/content/catalog';
+import type { ContentDoc, ContentFragment } from '@lib/content/doc';
 import { topicStats } from '@lib/content/stats';
 import { findLesson, flattenLessons, TRACKS } from '@lib/content/tracks';
 import { TOPIC_IDS, TOPICS } from '@lib/topics';
@@ -29,7 +42,7 @@ import { parseSceneParams } from '@lib/viz/schemas';
 import { countSlugs, writeManifest } from './manifest';
 import { highlightLines } from './highlight';
 import { CONTENT_DIR, OUT_DIR, rel, ROOT, SEARCH_INDEX_FILE } from './paths';
-import { renderDoc } from './pipeline';
+import { inline, renderDoc } from './pipeline';
 import { buildSearchIndex } from './search-index';
 
 const started = Date.now();
@@ -117,14 +130,63 @@ for (const sheet of CHEATSHEETS) {
 }
 write(path.join(OUT_DIR, 'dsa', 'practice.json'), { topics: PRACTICE_TOPICS, problems: LEETCODE_PROBLEMS, cheatsheets: CHEATSHEETS });
 
-// The Java question bank's titles by id: questions flagged for revision are named in the notebook.
+// The Java question bank: each topic's questions with their Markdown rendered like the lessons
+// (highlighted code), a file of the tricky ones, and every question's title by id (the bank's index
+// counts them; the notebook names questions flagged for revision).
+const java = TRACKS.java;
+const fragment = async (markdown: string): Promise<ContentFragment> => {
+  const { html, widgets } = await renderDoc(markdown, { basePath: java.basePath, javaVersion: java.javaVersion });
+  return { html, widgets };
+};
 const javaQuestions: JavaQuestionIndex = {};
+const tricky: JavaBankQuestion[] = [];
 for (const topic of INTERVIEW_TOPICS) {
-  for (const question of parseInterviewTopic(topic.id, read('java', 'interview', `${topic.id}.md`))) {
-    javaQuestions[question.id] = { title: question.title, topic: question.topic };
+  const questions = parseInterviewTopic(topic.id, read('java', 'interview', `${topic.id}.md`), (message) => {
+    throw new Error(`content/java/interview/${topic.id}.md: ${message}`);
+  });
+  const rendered: JavaBankQuestion[] = [];
+  for (const question of questions) {
+    const lessons = question.lessons.flatMap((slug) => {
+      const lesson = findLesson(java, slug)?.lesson;
+      return lesson ? [{ slug: lesson.slug, title: lesson.title }] : [];
+    });
+    const entry: JavaBankQuestion = {
+      id: question.id,
+      topic: question.topic,
+      title: question.title,
+      level: question.level,
+      kind: question.kind,
+      tricky: question.tricky,
+      lessons,
+      ...(question.body && { body: await fragment(question.body) }),
+      hints: await Promise.all(question.hints.map(fragment)),
+      answer: await fragment(question.answer),
+      ...(question.whyNot && { whyNot: await fragment(question.whyNot) }),
+      ...(question.followUp && { followUp: await fragment(question.followUp) }),
+    };
+    rendered.push(entry);
+    if (question.tricky) tricky.push(entry);
+    javaQuestions[question.id] = { title: question.title, topic: question.topic, ...(question.tricky && { tricky: true as const }) };
+  }
+  write(path.join(OUT_DIR, 'java', 'interview', `${topic.id}.json`), { topic, questions: rendered });
+}
+write(path.join(OUT_DIR, 'java', 'interview', 'tricky.json'), { topic: TRICKY, questions: tricky });
+write(path.join(OUT_DIR, 'java', 'interview-questions.json'), javaQuestions);
+
+// The LLD and HLD mock interviews: each written problem's interview script, parsed from its
+// breakdown (content/<lld|hld>/interview.ts) with its Markdown left for the browser to render as the
+// learner opens each part, and the checklist rendered for the checklist widget.
+for (const topic of ['lld', 'hld'] as const) {
+  for (const problem of TRACKS[topic].problems) {
+    if (!hasProblemBody(topic, problem.slug)) continue;
+    const markdown = read(topic, 'problems', `${problem.slug}.md`);
+    const script = topic === 'hld' ? parseInterviewScript(markdown) : parseLldInterviewScript(markdown);
+    write(path.join(OUT_DIR, topic, 'interview', `${problem.slug}.json`), {
+      script,
+      checklist: script.checklist.map(inline),
+    } satisfies MockScriptFile);
   }
 }
-write(path.join(OUT_DIR, 'java', 'interview-questions.json'), javaQuestions);
 
 // The animation gallery: every scene with its default parameters and highlighted code.
 const visualize: VisualizeIndex = { scenes: [] };

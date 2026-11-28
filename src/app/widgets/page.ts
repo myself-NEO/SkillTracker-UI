@@ -6,7 +6,8 @@ import type { TrackId } from '@content/shared/types';
  */
 export interface BodyPage {
   track: TrackId;
-  kind: 'lesson' | 'problem' | 'cheatsheet';
+  /** "interview": a part of an interview question (an answer, a hint), outside any page body. */
+  kind: 'lesson' | 'problem' | 'cheatsheet' | 'interview';
   slug: string;
   /**
    * Set where the topic has a notebook (Java, LLD, HLD): what its tools (section and question
@@ -23,8 +24,9 @@ export interface NotebookPage {
   href: string;
 }
 
-/** Key under which a page's checklist ticks are kept, e.g. "hld:problem:url-shortener"; cheat sheets keep none. */
-export const pageKey = (page: BodyPage) => (page.kind === 'cheatsheet' ? undefined : `${page.track}:${page.kind}:${page.slug}`);
+/** Key under which a page's checklist ticks are kept, e.g. "hld:problem:url-shortener"; only lessons and problems keep them. */
+export const pageKey = (page: BodyPage) =>
+  page.kind === 'lesson' || page.kind === 'problem' ? `${page.track}:${page.kind}:${page.slug}` : undefined;
 
 let counter = 0;
 

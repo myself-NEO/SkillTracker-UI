@@ -4,8 +4,18 @@ import { CanMatchFn, ResolveFn } from '@angular/router';
 import type { Cheatsheet } from '@content/dsa/cheatsheets';
 import { findLesson, flattenLessons, type LessonLocation } from '@content/shared/curriculum';
 import type { ProblemMeta } from '@content/shared/types';
-import type { ContentIndex, DsaPractice, JavaQuestionIndex, TrackFile, VisualizeIndex } from '@lib/content/catalog';
+import type { InterviewTopic } from '@content/java/interview';
+import type {
+  ContentIndex,
+  DsaPractice,
+  JavaBankQuestion,
+  JavaQuestionIndex,
+  MockScriptFile,
+  TrackFile,
+  VisualizeIndex,
+} from '@lib/content/catalog';
 import type { ContentDoc } from '@lib/content/doc';
+import type { MockTopic } from '@lib/interview/mock';
 import { practiceCopy } from '@lib/content/practice';
 import { RESERVED_SEGMENTS } from '@lib/routes';
 import { TOPICS, type TopicId } from '@lib/topics';
@@ -37,6 +47,25 @@ export const javaQuestionsResolver: ResolveFn<JavaQuestionIndex> = () =>
   inject(ContentService)
     .javaQuestions()
     .catch(() => ({}));
+
+export interface MockHubData {
+  /** The Java question bank's titles by id; empty when it couldn't be read. */
+  questions: JavaQuestionIndex;
+  /** LLD's and HLD's curricula, for their mock interviews; null when one couldn't be read. */
+  lld: TrackFile | null;
+  hld: TrackFile | null;
+}
+
+/** /mock-interview: what the practice cards count. A file that can't be read leaves its card without figures. */
+export const mockHubResolver: ResolveFn<MockHubData> = async () => {
+  const content = inject(ContentService);
+  const [questions, lld, hld] = await Promise.all([
+    content.javaQuestions().catch(() => ({})),
+    content.track('lld').catch(() => null),
+    content.track('hld').catch(() => null),
+  ]);
+  return { questions, lld, hld };
+};
 
 export const visualizeResolver: ResolveFn<VisualizeIndex | null> = () =>
   inject(ContentService)
@@ -83,6 +112,55 @@ const missing = { status: 'missing' } as const;
 /** A download that failed because the file isn't there is a missing page; anything else is an error. */
 const failure = (error: unknown) =>
   error instanceof HttpErrorResponse && error.status === 404 ? missing : ({ status: 'error' } as const);
+
+export interface JavaBankData {
+  topic: InterviewTopic;
+  questions: JavaBankQuestion[];
+}
+
+/** /java/interview/:bankTopic: one topic of the question bank, or its tricky questions ("tricky"). */
+export const javaBankResolver: ResolveFn<PageResult<JavaBankData>> = async (route) => {
+  try {
+    const { topic, questions } = await inject(ContentService).javaBank(route.paramMap.get('bankTopic') ?? '');
+    return { status: 'ok', value: { topic, questions } };
+  } catch (error) {
+    return failure(error);
+  }
+};
+
+/** "Collections · Java interview questions" */
+export const javaBankTitleResolver: ResolveFn<string> = async (route) => {
+  try {
+    const { topic } = await inject(ContentService).javaBank(route.paramMap.get('bankTopic') ?? '');
+    return `${topic.title} · Java interview questions`;
+  } catch (error) {
+    return failure(error).status === 'missing' ? 'Page not found' : 'Java interview questions';
+  }
+};
+
+export interface MockInterviewData {
+  topic: MockTopic;
+  track: TrackFile;
+  problem: ProblemMeta;
+  /** null while the problem's breakdown, which the interview is built from, isn't written. */
+  script: MockScriptFile | null;
+}
+
+/** /lld/interview/:problem and /hld/interview/:problem: a practice problem as a mock interview. */
+export const mockInterviewResolver: ResolveFn<PageResult<MockInterviewData>> = async (route) => {
+  const content = inject(ContentService);
+  const topic = route.data['topic'] as MockTopic;
+  const slug = route.paramMap.get('problem') ?? '';
+  try {
+    const track = await content.track(topic);
+    const problem = track.problems.find((candidate) => candidate.slug === slug);
+    if (!problem) return missing;
+    const script = track.writtenProblems.includes(slug) ? await content.mockScript(topic, slug) : null;
+    return { status: 'ok', value: { topic, track, problem, script } };
+  } catch (error) {
+    return failure(error);
+  }
+};
 
 /** /:topic/:lesson */
 export const lessonResolver: ResolveFn<PageResult<LessonData>> = async (route) => {
@@ -134,9 +212,9 @@ export const cheatsheetResolver: ResolveFn<PageResult<CheatsheetData>> = async (
 };
 
 /**
- * Lessons live at /:topic/:lesson, so that route must not take the topic's section pages
- * (/java/notebook, /dsa/problems, …): until a section is ported, its URL falls through to the
- * not-found page, which says it's on its way.
+ * Lessons live at /:topic/:lesson, so that route must not take the names of the topics' section
+ * pages (/java/notebook, /dsa/problems, …): a section a topic doesn't have (/dsa/interview) is a
+ * page that doesn't exist, not a lesson.
  */
 export const lessonSlugMatch: CanMatchFn = (_route, segments) =>
   !(RESERVED_SEGMENTS as readonly string[]).includes(segments[0]?.path ?? '');
@@ -161,6 +239,18 @@ export const problemTitleResolver: ResolveFn<string> = async (route) => {
     const track = await inject(ContentService).track(topic);
     const problem = track.problems.find((candidate) => candidate.slug === route.paramMap.get('problem'));
     return problem ? `${problem.title} · ${track.shortTitle}` : 'Page not found';
+  } catch {
+    return track404Title(topic);
+  }
+};
+
+/** "Mock interview: URL Shortener · HLD" */
+export const mockInterviewTitleResolver: ResolveFn<string> = async (route) => {
+  const topic = route.data['topic'] as TopicId;
+  try {
+    const track = await inject(ContentService).track(topic);
+    const problem = track.problems.find((candidate) => candidate.slug === route.paramMap.get('problem'));
+    return problem ? `Mock interview: ${problem.title} · ${track.shortTitle}` : 'Page not found';
   } catch {
     return track404Title(topic);
   }

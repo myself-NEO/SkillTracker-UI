@@ -9,6 +9,7 @@ import { InterviewsStore } from '../../core/interviews.store';
 import { NotebookStore } from '../../core/notebook.store';
 import { ProgressStore } from '../../core/progress.store';
 import { CheckCircleIconComponent, HalfCircleIconComponent } from '../../ui/icons';
+import { InlineCodeComponent } from '../../ui/inline-code.component';
 import { ProgressBarComponent, StatTileComponent } from '../../ui/stat-parts';
 import { ClockGlyphComponent } from '../article/article-parts';
 
@@ -30,7 +31,15 @@ const capitalise = (word: string) => word.charAt(0).toUpperCase() + word.slice(1
  */
 @Component({
   selector: 'app-progress-dashboard',
-  imports: [RouterLink, StatTileComponent, ProgressBarComponent, CheckCircleIconComponent, HalfCircleIconComponent, ClockGlyphComponent],
+  imports: [
+    RouterLink,
+    StatTileComponent,
+    ProgressBarComponent,
+    CheckCircleIconComponent,
+    HalfCircleIconComponent,
+    ClockGlyphComponent,
+    InlineCodeComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   templateUrl: './dashboard.component.html',

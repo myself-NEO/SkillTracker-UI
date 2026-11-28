@@ -30,7 +30,7 @@ The answers below are the interviewer's. Questions that change the design come f
     to see, and blocks hide content both ways.
 - **Q:** How fresh must the feed be? <!-- match: fresh, freshness, new posts, how quickly, real time -->
   - **A:** New posts should be eligible within a minute; the feed doesn't need to update live while open.
-- **Q:** Where are users? <!-- match: regions, global, multi-region, datacenters, worldwide, failover -->
+- **Q:** Where are users — one region or worldwide? <!-- match: regions, global, multi-region, datacenters, worldwide, failover -->
   - **A:** Worldwide, served from several regions; losing a region must not take the feed down.
 - **Q:** What happens when a user scrolls a lot? <!-- match: scroll, pagination, infinite scroll, more posts, duplicates -->
   - **A:** Infinite scroll without duplicates or gaps during a session.

@@ -98,6 +98,7 @@ How the design hides Render's cold start:
 - `GlobalExceptionHandler` extends `ResponseEntityExceptionHandler`, with a generic 500 body.
 - Dockerfile: `exec java` plus `-XX:+ExitOnOutOfMemoryError`.
 - `open-in-view: false`, graceful shutdown.
+- State documents come back without their null members (`spring.jackson.default-property-inclusion: non_null`). Return them as JSON trees, so they come back exactly as saved. The UI copes meanwhile (Phase 6a.2).
 
 ## Phase 1: UI groundwork (SkillTracker-UI)
 - **Backend URL:** point `src/environments/environment.ts` at the new Singapore Render service. Deploying this UI to Vercel takes the live app off the old US backend.
@@ -361,6 +362,86 @@ Split into three:
   - delete the Dashboard, Roadmap and StaticRoadmap code (controllers, services, seeders, `UserSeedService`, `ADMIN_EMAILS`, entities, repos, DTOs);
   - `V3__drop_dashboard_roadmaps.sql`, which drops 7 tables.
   - `users` and `mock_interviews` stay.
+
+6a is split in three, each with its own review:
+- **6a.1:** the Java question bank (`/java/interview`).
+- **6a.2:** the timed LLD/HLD mock interviews (`/lld|hld/interview`), with their kits, rubric, editors and attempt history.
+- **6a.3:** the `/mock-interview` hub (practise and schedule), and the backend's `/api/interviews`.
+
+**Phase 6a.1 (done and committed 2026-11-28): the Java question bank.**
+- **Content build:**
+  - Each bank topic is written as `public/content/java/interview/<topic>.json`, with its questions' Markdown (question detail, hints, answer, "why other answers fall short", follow-up) rendered like the lessons: highlighted code with copy buttons.
+  - `tricky.json` holds the 71 tricky questions of every topic. The 14 topic files and `tricky.json` come to 175 KB gzipped, about 12 KB per topic.
+  - Each file carries its topic's title and description, so the route resolvers don't ship the topic list in the first download.
+  - `interview-questions.json` marks the tricky questions, for the index's counts.
+- **`/java/interview`:** the bank's 14 topics and its tricky questions as cards, with how much is practised (TheSWEguide's BankProgress).
+- **`/java/interview/:bankTopic`:**
+  - a topic's questions, with chips to switch topic;
+  - each question opens to practise: write an answer (saved as you type), open hints one at a time, reveal the model answer, rate yourself;
+  - a "Missed it" rating puts the question on the revision list; there's also a bookmark and a "Mark for revision" flag;
+  - "Learn it" links to the lessons that teach it;
+  - a `#q-…` link from search or the notebook opens its question.
+- **Where practice is kept:** in the notebook (`java:<question id>`), so it reaches the account. The Java notebook and progress page count and name these questions.
+- **Shared parts:**
+  - question parts reuse the lesson body renderer (`kind: 'interview'`);
+  - `DebouncedSave` (`notebook/debounced-save.ts`) saves drafts and notes when typing pauses, and at once when leaving or closing the page;
+  - titles with `inline code` show it as code, here and in the notebook and progress pages (TheSWEguide showed the backticks).
+- **Tests:**
+  - the bank's helpers;
+  - a question's practice (draft, hints, answer, rating, bookmark);
+  - e2e: practising a question from a `#q-…` link, a miss reaching the notebook's revision list, and the account.
+
+**Phase 6a.2 (done and committed 2026-11-28): the timed LLD and HLD mock interviews.**
+- **Content build:**
+  - Each written LLD and HLD problem's breakdown is parsed into its interview script (`content/hld/interview.ts`, `content/lld/interview.ts`) and written as `public/content/<lld|hld>/interview/<slug>.json`.
+  - The script's Markdown is left for the browser to render as the learner opens each part, as TheSWEguide did. Only the checklist is rendered, for the checklist widget.
+  - 58 files (26 LLD, 32 HLD), 586 KB gzipped, 16 KB at most.
+- **`/lld/interview` and `/hld/interview`:** every practice problem by level, with its status, the attempt in progress ("Resume interview"), the number of attempts and the best self-score.
+- **`/lld|hld/interview/:problem`:**
+  - The brief: the interviewer's prompt, how the simulator works, a 45- or 60-minute length with each phase's budget, and the attempts so far.
+  - Then the phases against the clock, in a sidebar with each phase's time against its budget:
+    - Clarifying questions, answered from the script by keyword matching. Design choices get "that's your call"; other questions get "state an assumption". The full list is shown on request.
+    - HLD: requirements (checked against the reference requirements), the estimate (the calculator prefilled from the breakdown, values kept), APIs, the data model, the architecture in Mermaid (component palette, arrow helper, live preview), deep dives, failures, trade-offs.
+    - LLD: requirements, entities (checked against the reference class diagram), the class diagram in the lessons' notation with a live preview, the core flow in Java, edge cases and concurrency, follow-ups.
+    - Each phase has guidance, a draft saved as you type, hints one at a time, and the reference revealed on request.
+    - The self-evaluation: time per phase, the rubric, the checklist (its ticks are shared with the breakdown page), and HLD's follow-up questions. Finishing keeps the attempt and marks the problem Attempted.
+  - The clock stops while the page is hidden, closed or left; the learner resumes it.
+- **Where attempts are kept:** in the interviews document, with the account, in TheSWEguide's format, so its backups import.
+- **Shared parts:**
+  - the kits (phases, budgets, guidance, rubric, matcher, replies) are in `src/lib/interview/mock.ts`, and the flowchart helpers in `src/lib/diagrams/flowchart.ts`;
+  - the estimator can take stored values (`values`, `valuesChange`) and drop its frame (`bare`);
+  - a compact Mermaid preview says why a diagram can't be drawn, as TheSWEguide's did, instead of repeating its text.
+- **Found along the way:**
+  - The server leaves null members out of the documents it returns (Phase 0d). An unanswered question's `matched: null` came back missing, and the question was dropped at the next save. The model now reads a missing `matched` as no match.
+  - Five HLD clarifying questions didn't get their own answer when asked word for word. They are reworded (Facebook news feed, file upload service, Instagram, web crawler, YouTube), and a test now asks every question of every problem.
+  - Every section page exists now. The not-found page's "on its way" variant is gone, and the validator counts the section pages as pages.
+- **Tests:**
+  - the session model (clock, phases, drafts, finishing, reading stored attempts);
+  - the kits and helpers, and every written problem's script: complete, and each question answers itself;
+  - the simulator: the brief, questions, the clock and its pause, drafts, finishing;
+  - e2e: an HLD interview from the list to the attempts, kept across a reload and with the account.
+
+**Phase 6a.3 (done 2026-11-28, in review): the Mock Interview tab and `/api/interviews`.**
+- **Backend (SkillTracker-Srcv):**
+  - `GET /api/interviews` lists the learner's mock interviews with other people, soonest first (by date, then time).
+  - `POST /api/interviews` books one (201).
+  - `PUT /api/interviews/{id}/feedback` scores one 1–5 with notes, which completes it.
+  - Each answers with the whole list.
+  - Bookings are checked: the kind is one of the scheduler's four, the time is like `14:30`, the interviewer’s name is at most 120 characters, and notes and feedback at most 2,000. Overlong text used to fail as a database error (500).
+  - Another learner's interview is a 404.
+  - Bookings and scores are limited to 30 per 10 minutes per user.
+  - `InterviewService` holds the logic; the old `/api/dashboard/interview*` routes stay for the old UI until launch (6c deletes them with the dashboard).
+  - Tests: listing order, booking, scoring, each learner's own interviews only, the checks, signed-out requests. 64 backend tests pass, including PostgreSQL 18.
+- **`/mock-interview`:**
+  - **On your own:** cards for Java's interview questions (with the bank's progress), and LLD's and HLD's mock interviews (problems interviewed, attempts, best score, in progress).
+  - Under the cards, the interviews left unfinished ("Pick up where you left off"), with their phase and time.
+  - **With a person:** the scheduler, now on `/api/interviews` rather than the dashboard's routes.
+  - A resolver reads the bank's index and LLD's and HLD's curricula, all static files, so the cards don't wait for the backend.
+- **Deploy order:** the backend's `dev` must reach `main` (Render) before the UI's. The live backend answers 500 for `/api/interviews` until then, and the scheduler says it couldn't load. The same holds for `/api/state` (Phase 5a).
+- **Tests:**
+  - the practice cards' figures and the unfinished interviews;
+  - the scheduler's calls;
+  - e2e: the tab's links, and booking and scoring a session against the local backend.
 
 ## Phase 7: hosting and launch
 - **Vercel:** use the UI's Vercel project, or create one if it isn't on Vercel yet. Framework preset Angular, build `npm run build`, output `dist/browser`, production branch `main`.

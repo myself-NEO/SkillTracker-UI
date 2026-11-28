@@ -1,11 +1,19 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import type { ContentIndex, DsaPractice, JavaQuestionIndex, TrackFile, VisualizeIndex } from '@lib/content/catalog';
+import type {
+  ContentIndex,
+  DsaPractice,
+  JavaBankFile,
+  JavaQuestionIndex,
+  MockScriptFile,
+  TrackFile,
+  VisualizeIndex,
+} from '@lib/content/catalog';
 import type { ContentDoc } from '@lib/content/doc';
 import type { TopicId } from '@lib/topics';
 
-/** How many page bodies (lessons, problems, cheat sheets) stay in memory for Back and Forward. */
+/** How many page bodies (lessons, problems, cheat sheets, interview scripts) stay in memory for Back and Forward. */
 const DOC_CACHE_SIZE = 24;
 
 /**
@@ -17,7 +25,7 @@ const DOC_CACHE_SIZE = 24;
 export class ContentService {
   private readonly http = inject(HttpClient);
   private readonly catalog = new Map<string, Promise<unknown>>();
-  private readonly docs = new Map<string, Promise<ContentDoc>>();
+  private readonly docs = new Map<string, Promise<unknown>>();
 
   /** Every topic with its counts, and the content version. */
   index(): Promise<ContentIndex> {
@@ -44,6 +52,11 @@ export class ContentService {
     return this.cached(this.catalog, '/content/java/interview-questions.json');
   }
 
+  /** One topic of the Java question bank (or "tricky"), rendered. */
+  javaBank(topic: string): Promise<JavaBankFile> {
+    return this.cached(this.catalog, `/content/java/interview/${encodeURIComponent(topic)}.json`);
+  }
+
   lesson(topic: TopicId, slug: string): Promise<ContentDoc> {
     return this.doc(`/content/${topic}/lessons/${encodeURIComponent(slug)}.json`);
   }
@@ -56,6 +69,11 @@ export class ContentService {
     return this.doc(`/content/dsa/cheatsheets/${encodeURIComponent(slug)}.json`);
   }
 
+  /** An LLD or HLD problem's mock-interview script. */
+  mockScript(topic: 'lld' | 'hld', slug: string): Promise<MockScriptFile> {
+    return this.doc(`/content/${topic}/interview/${encodeURIComponent(slug)}.json`);
+  }
+
   /** Starts downloading a lesson the reader is likely to open next, when the browser is idle. */
   prefetchLesson(topic: TopicId, slug: string): void {
     const start = () => void this.lesson(topic, slug).catch(() => {});
@@ -63,8 +81,8 @@ export class ContentService {
     else setTimeout(start, 1500);
   }
 
-  private doc(path: string): Promise<ContentDoc> {
-    const request = this.cached(this.docs, path) as Promise<ContentDoc>;
+  private doc<T = ContentDoc>(path: string): Promise<T> {
+    const request = this.cached<T>(this.docs, path);
     // Most recently used last; the oldest goes once the cache is full.
     this.docs.delete(path);
     this.docs.set(path, request);

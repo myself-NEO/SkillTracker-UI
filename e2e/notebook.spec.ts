@@ -114,4 +114,29 @@ test.describe('the notebook (needs the local backend)', () => {
     await expect.poll(async () => (await serverProgress(token)).problems?.['dsa:lc-1'], { timeout: 15_000 }).toBe('completed');
     await expect.poll(async () => Object.keys((await serverNotebook(token)).revise ?? {}), { timeout: 15_000 }).toEqual(['dsa:lc-1']);
   });
+
+  test('a Java interview question is practised, and a miss goes on the revision list', async ({ page }) => {
+    await resetNotebook(token);
+    // A link to a question opens it.
+    await page.goto('/java/interview/collections#q-arraylist-vs-linkedlist');
+    const question = page.locator('[id="q-arraylist-vs-linkedlist"]');
+    await question.getByRole('textbox', { name: 'Your answer' }).fill('ArrayList: O(1) get; LinkedList rarely wins.');
+    await question.getByRole('button', { name: 'Show hint 1 of 2' }).click();
+    await expect(question.getByText('Hint 1 of 2')).toBeVisible();
+    await question.getByRole('button', { name: 'Reveal the answer' }).click();
+    await expect(question.getByRole('region', { name: 'Answer', exact: true })).toBeVisible();
+    await question.getByRole('button', { name: 'Missed it' }).click();
+    await expect(question.getByText('Added to your revision list.')).toBeVisible();
+    await expect(page.locator('app-bank-progress')).toContainText('1 of 9 questions practised');
+
+    await page.getByRole('navigation', { name: 'Java pages' }).getByRole('link', { name: 'Notebook' }).click();
+    await expect(page.getByRole('tabpanel').getByRole('link', { name: 'ArrayList or LinkedList?' })).toHaveAttribute(
+      'href',
+      '/java/interview/collections#q-arraylist-vs-linkedlist',
+    );
+
+    await expect
+      .poll(async () => (await serverNotebook(token)).questions?.['java:arraylist-vs-linkedlist'], { timeout: 15_000 })
+      .toMatchObject({ rating: 'missed', hints: 1, draft: 'ArrayList: O(1) get; LinkedList rarely wins.' });
+  });
 });

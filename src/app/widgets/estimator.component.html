@@ -1,11 +1,18 @@
-<figure class="not-prose my-6 rounded-xl border border-accent/30 bg-surface p-4 sm:p-5">
-  <figcaption class="mb-4 flex flex-wrap items-center justify-between gap-2">
-    <span class="text-xs font-semibold tracking-wider text-accent uppercase">
-      🧮 Capacity estimator{{ title() ? ' · ' + title() : '' }}
-    </span>
-    <span class="text-[11px] text-muted">Change any assumption; decimal units (1 KB = 1,000 B)</span>
-  </figcaption>
+@if (bare()) {
+  <ng-container [ngTemplateOutlet]="body" />
+} @else {
+  <figure class="not-prose my-6 rounded-xl border border-accent/30 bg-surface p-4 sm:p-5">
+    <figcaption class="mb-4 flex flex-wrap items-center justify-between gap-2">
+      <span class="text-xs font-semibold tracking-wider text-accent uppercase">
+        🧮 Capacity estimator{{ title() ? ' · ' + title() : '' }}
+      </span>
+      <span class="text-[11px] text-muted">Change any assumption; decimal units (1 KB = 1,000 B)</span>
+    </figcaption>
+    <ng-container [ngTemplateOutlet]="body" />
+  </figure>
+}
 
+<ng-template #body>
   <div class="grid gap-5 lg:grid-cols-[minmax(0,19rem)_minmax(0,1fr)]">
     <fieldset class="m-0 min-w-0 border-0 p-0">
       <legend class="sr-only">Assumptions</legend>
@@ -96,4 +103,4 @@
       }
     </div>
   </div>
-</figure>
+</ng-template>

@@ -12,6 +12,7 @@ import { CHEATSHEETS } from '@content/dsa/cheatsheets';
 import { PRACTICE_TOPICS } from '@content/dsa/practiceTopics';
 import { LESSON_SECTIONS as DSA_LESSON_SECTIONS } from '@content/dsa/formats';
 import { LESSON_SECTIONS as HLD_LESSON_SECTIONS, PROBLEM_SECTIONS } from '@content/hld/formats';
+import { INTERVIEW_TOPICS } from '@content/java/interview';
 import manifest from '@content/.generated/manifest.json';
 import { flattenLessons } from '@content/shared/curriculum';
 import { TRACKS } from '@lib/content/tracks';
@@ -29,28 +30,30 @@ const CONTENT = CONTENT_DIR;
 const errors: string[] = [];
 const warnings: string[] = [];
 
-// Pages the app serves (TheSWEguide's URL scheme), and section pages that arrive with later phases.
+// Pages the app serves (TheSWEguide's URL scheme): the topics with their lessons, problems and
+// section pages (practice, interview prep, notebook, progress, …), DSA's practice topics and cheat
+// sheets, and the animations.
 const pages = new Set<string>(['/']);
-const planned = new Set<string>();
 for (const topic of TOPIC_IDS) {
   const track = TRACKS[topic];
   pages.add(track.basePath);
   for (const { lesson } of flattenLessons(track)) pages.add(`${track.basePath}/${lesson.slug}`);
+  pages.add(`${track.basePath}/problems`);
   for (const problem of track.problems) pages.add(`${track.basePath}/problems/${problem.slug}`);
-  planned.add(`${track.basePath}/problems`);
-  for (const link of track.sectionLinks ?? []) planned.add(link.href);
+  for (const link of track.sectionLinks ?? []) pages.add(link.href);
   if (topic === 'lld' || topic === 'hld')
-    for (const problem of track.problems) planned.add(`${track.basePath}/interview/${problem.slug}`);
+    for (const problem of track.problems) pages.add(`${track.basePath}/interview/${problem.slug}`);
 }
-for (const practiceTopic of PRACTICE_TOPICS) planned.add(`/dsa/problems/${practiceTopic.id}`);
+for (const interviewTopic of INTERVIEW_TOPICS) pages.add(`/java/interview/${interviewTopic.id}`);
+for (const practiceTopic of PRACTICE_TOPICS) pages.add(`/dsa/problems/${practiceTopic.id}`);
 for (const sheet of CHEATSHEETS) pages.add(`/dsa/cheatsheets/${sheet.slug}`);
 pages.add('/visualize');
 for (const scene of SCENES) pages.add(`/visualize/${scene.id}`);
-const routes: SiteRoutes = { pages, planned };
+const routes: SiteRoutes = { pages };
 /** Files each animation is embedded in, by scene id. */
 const embeds = new Map<string, string[]>();
 
-const stats = { links: 0, plannedLinks: 0, fences: new Map<string, number>(), bodies: 0 };
+const stats = { links: 0, fences: new Map<string, number>(), bodies: 0 };
 
 /** The section contracts of the topics that have them, by lesson format. */
 const contracts: Partial<Record<string, Partial<Record<string, readonly string[]>>>> = {
@@ -64,8 +67,7 @@ const checkBody = (file: string, basePath: string, requiredSections?: readonly s
   stats.bodies++;
   for (const link of scanned.links) {
     const verdict = checkLink(link.url, basePath, routes);
-    if (verdict === 'ok' || verdict === 'planned') stats.links++;
-    if (verdict === 'planned') stats.plannedLinks++;
+    if (verdict === 'ok') stats.links++;
     if (typeof verdict === 'object') errors.push(`${rel(file)}:${link.line}  ${verdict.broken}`);
   }
   for (const html of scanned.rawHtml)
@@ -193,7 +195,7 @@ console.log(
   `validate: ${lessonCount} lessons (${lessonCount - comingSoon} written, ${comingSoon} coming soon) and ${problemCount} problems across ${TOPIC_IDS.length} topics; ${stats.bodies} Markdown bodies checked`,
 );
 console.log(
-  `validate: ${stats.links} internal links resolve (${stats.plannedLinks} to section pages planned for a later phase)`,
+  `validate: ${stats.links} internal links resolve`,
 );
 console.log(`validate: fenced blocks: ${fenceSummary}`);
 if (warnings.length > 0) {

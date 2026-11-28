@@ -1,9 +1,12 @@
 import type { Cheatsheet } from '@content/dsa/cheatsheets';
 import type { LeetCodeProblem } from '@content/dsa/problems';
 import type { PracticeTopic } from '@content/dsa/practiceTopics';
-import type { Track } from '@content/shared/types';
+import type { InterviewTopic, QuestionKind } from '@content/java/interview';
+import type { Level, Track } from '@content/shared/types';
+import type { BaseScript } from '@content/system-design/interviewScript';
 import type { Topic, TopicId } from '@lib/topics';
 import type { SceneCode, VizMode } from '@lib/viz/types';
+import type { ContentFragment, InlineText } from './doc';
 import type { topicStats } from './stats';
 
 // Shapes of the catalog files the content build writes (tools/content/build.ts) and the app reads.
@@ -35,9 +38,49 @@ export interface TrackFile extends Track {
 
 /**
  * public/content/java/interview-questions.json: the Java question bank by question id, so the
- * notebook can name and link questions flagged for revision without loading the bank.
+ * notebook can name and link questions flagged for revision, and the bank's index count them,
+ * without loading the bank.
  */
-export type JavaQuestionIndex = Record<string, { title: string; topic: string }>;
+export type JavaQuestionIndex = Record<string, { title: string; topic: string; tricky?: true }>;
+
+/** One question of the Java bank, its Markdown rendered (public/content/java/interview/<topic>.json). */
+export interface JavaBankQuestion {
+  id: string;
+  /** The bank topic it belongs to, e.g. "collections". */
+  topic: string;
+  /** May hold `inline code`. */
+  title: string;
+  level: Level;
+  kind: QuestionKind;
+  tricky: boolean;
+  /** The lessons that teach it. */
+  lessons: { slug: string; title: string }[];
+  /** Extra detail of the question, often code to read. */
+  body?: ContentFragment;
+  hints: ContentFragment[];
+  answer: ContentFragment;
+  whyNot?: ContentFragment;
+  followUp?: ContentFragment;
+}
+
+/**
+ * public/content/java/interview/<topic>.json: one topic of the Java question bank;
+ * `tricky.json` has the tricky questions of every topic.
+ */
+export interface JavaBankFile {
+  topic: InterviewTopic;
+  questions: JavaBankQuestion[];
+}
+
+/**
+ * public/content/<lld|hld>/interview/<slug>.json: what a problem's mock interview is built from, its
+ * breakdown parsed into an interview script (content/hld/interview.ts, content/lld/interview.ts).
+ */
+export interface MockScriptFile<S extends BaseScript = BaseScript> {
+  script: S;
+  /** The script's checklist items, rendered for the checklist widget. */
+  checklist: InlineText[];
+}
 
 /** public/content/dsa/practice.json */
 export interface DsaPractice {

@@ -30,7 +30,7 @@ The answers below are the interviewer's. Questions that change the design come f
   - **A:** Until deleted. Deleted files can be restored for 30 days.
 - **Q:** Are there storage quotas? <!-- match: quota, limit per user, storage limit, plan -->
   - **A:** Yes — 50 GB per user on the standard plan. Uploads beyond the quota are rejected.
-- **Q:** Where are users located? <!-- match: global, region, location, worldwide, latency, geography -->
+- **Q:** Where are users located — one region or worldwide? <!-- match: global, region, location, worldwide, latency, geography -->
   - **A:** Worldwide. Downloads should be fast everywhere; data can live in one primary region.
 - **Q:** Should identical files be stored once? <!-- match: dedup, duplicate, same file, identical -->
   - **A:** Not required. Keep it simple.

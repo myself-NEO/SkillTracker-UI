@@ -1,13 +1,15 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import type { MockHubData } from '../../core/content.resolvers';
 import { InterviewSchedulerComponent } from './interview-scheduler.component';
+import { PracticeOverviewComponent } from './practice-overview.component';
 
 /**
- * /mock-interview. For now the scheduler; TheSWEguide's timed LLD and HLD mock interviews and the
- * Java question bank join it in Phase 6 (docs/plan.md).
+ * /mock-interview, the Mock Interview tab: practice on one's own (Java's interview questions,
+ * LLD's and HLD's timed mock interviews), and SkillTracker's scheduler for sessions with a person.
  */
 @Component({
   selector: 'app-mock-interview-page',
-  imports: [InterviewSchedulerComponent],
+  imports: [PracticeOverviewComponent, InterviewSchedulerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main id="main-content">
@@ -19,13 +21,28 @@ import { InterviewSchedulerComponent } from './interview-scheduler.component';
             Rehearse the real thing
           </h1>
           <p class="mt-4 max-w-2xl text-lg leading-8 text-muted">
-            Book mock interviews with a friend, a mentor or a colleague. Afterwards, score each one and note what to
-            work on before the next.
+            Practise on your own with Java's interview questions and timed design interviews, or book a session with a
+            friend, a mentor or a colleague and score it afterwards.
           </p>
         </div>
       </section>
-      <app-interview-scheduler />
+
+      <app-practice-overview [questions]="hub().questions" [lld]="hub().lld" [hld]="hub().hld" />
+
+      <section aria-labelledby="schedule-title" class="mx-auto w-full max-w-[90rem] px-4 pt-14 pb-12 sm:px-6 lg:pt-20 lg:pb-16">
+        <div class="max-w-2xl">
+          <h2 id="schedule-title" class="font-display text-2xl font-semibold tracking-tight">With a person</h2>
+          <p class="mt-2 text-muted">
+            Book a session with a friend, a mentor or a colleague. Afterwards, score it and note what to work on before the
+            next one.
+          </p>
+        </div>
+        <app-interview-scheduler class="mt-8" />
+      </section>
     </main>
   `,
 })
-export class MockInterviewPageComponent {}
+export class MockInterviewPageComponent {
+  /** Resolved by the route (mockHubResolver). */
+  readonly hub = input.required<MockHubData>();
+}

@@ -6,6 +6,7 @@ import type { Note, NoteKind, SavedItem, Snippet } from '@lib/progress/notebook'
 import { NotebookStore } from '../../core/notebook.store';
 import { NoteIconComponent } from '../../ui/icons';
 import { AppHrefDirective } from '../../ui/app-href.directive';
+import { InlineCodeComponent } from '../../ui/inline-code.component';
 import { MarkdownComponent } from '../../ui/markdown.component';
 import { MermaidDiagramComponent } from '../article/mermaid-diagram.component';
 
@@ -121,14 +122,14 @@ export class CopyButtonComponent {
 /** A saved interview question; its model answer opens below it. */
 @Component({
   selector: 'app-question-card',
-  imports: [AppHrefDirective, MarkdownComponent],
+  imports: [AppHrefDirective, InlineCodeComponent, MarkdownComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block rounded-xl border border-border bg-surface' },
   template: `
     <details class="group" (toggle)="onToggle($event)">
       <summary class="flex cursor-pointer list-none items-start justify-between gap-3 p-4 [&::-webkit-details-marker]:hidden">
         <span class="min-w-0">
-          <span class="block font-medium text-fg">{{ item().title }}</span>
+          <span class="block font-medium text-fg" appInlineCode [text]="item().title"></span>
           <span class="mt-0.5 block text-xs text-muted">
             From
             @if (item().href; as href) {

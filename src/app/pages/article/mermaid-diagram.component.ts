@@ -9,6 +9,7 @@ import {
   ElementRef,
   inject,
   input,
+  output,
   signal,
   untracked,
   viewChild,
@@ -109,12 +110,19 @@ export class MermaidDiagramComponent {
   readonly compact = input(false);
   /** Saves the diagram to the learner's notebook; without it there is no Save button. */
   readonly save = input<(source: string, title: string | undefined) => void>();
+  /** After each drawing: null once the diagram is drawn, or why it couldn't be (e.g. a syntax error). */
+  readonly rendered = output<string | null>();
 
   protected readonly type = computed(() => diagramType(this.source()));
   protected readonly label = computed(
     () => this.title() ?? (this.type() === 'sequenceDiagram' ? 'Request flow' : 'Architecture diagram'),
   );
   protected readonly state = signal<RenderState>({ status: 'loading' });
+  /** The first line of Mermaid's message when the diagram can't be drawn. */
+  protected readonly errorLine = computed(() => {
+    const state = this.state();
+    return state.status === 'error' ? state.message.split('\n')[0] : '';
+  });
   protected readonly showText = signal(false);
   protected readonly copied = signal(false);
   protected readonly saved = signal(false);
@@ -156,13 +164,18 @@ export class MermaidDiagramComponent {
       const id = `mmd-${++renderCounter}`;
       renderDiagram(id, prepareSource(source, theme), theme)
         .then((svg) => {
-          if (!cancelled) this.state.set({ status: 'ready', svg });
+          if (cancelled) return;
+          this.state.set({ status: 'ready', svg });
+          this.rendered.emit(null);
         })
         .catch((error: unknown) => {
           // A failed render can leave Mermaid's scratch element behind.
           document.getElementById(id)?.remove();
           document.getElementById(`d${id}`)?.remove();
-          if (!cancelled) this.state.set({ status: 'error', message: error instanceof Error ? error.message : String(error) });
+          if (cancelled) return;
+          const message = error instanceof Error ? error.message : String(error);
+          this.state.set({ status: 'error', message });
+          this.rendered.emit(message);
         });
     });
 

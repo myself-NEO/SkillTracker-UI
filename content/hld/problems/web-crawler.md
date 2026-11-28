@@ -14,7 +14,7 @@ deduplication, partitioning by host, crawler traps, recrawl scheduling.
 
 The answers below are the interviewer's. Questions that change the design come first.
 
-- **Q:** What is the crawler for? <!-- match: purpose, what for, use case, search, goal, why -->
+- **Q:** What is the crawler for — what is its purpose? <!-- match: purpose, what for, use case, search, goal, why -->
   - **A:** Feeding a search engine's indexer. The output is stored page content plus extracted links.
 - **Q:** How many pages, and how often? <!-- match: scale, how many pages, pages per month, volume, throughput -->
   - **A:** About 1 billion pages a month, out of roughly 15 billion URLs we know about.

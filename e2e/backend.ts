@@ -93,35 +93,38 @@ export async function setProgress(token: string, patch: Record<string, Record<st
  * place every run (a merge patch: each key set to null is removed).
  */
 export async function clearProgress(token: string, patch: Record<string, Record<string, unknown>>) {
-  const api = await request.newContext();
-  try {
-    const response = await api.patch(`${API}/api/state/progress`, {
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/merge-patch+json' },
-      data: patch,
-    });
-    if (!response.ok()) throw new Error(`Could not change the e2e account's progress: ${response.status()}`);
-  } finally {
-    await api.dispose();
-  }
+  await patchDocument(token, 'progress', patch);
 }
 
 /** Empties the account's notebook, so a test starts from the same place every run. */
 export async function resetNotebook(token: string) {
   const fields = ['saved', 'difficult', 'revise', 'questions', 'notes', 'snippets', 'reviewed'];
+  await patchDocument(token, 'notebook', Object.fromEntries(fields.map((field) => [field, null])));
+}
+
+/** Removes a problem's mock-interview attempts, in progress and finished (key: "hld:url-shortener"). */
+export async function resetMockInterview(token: string, key: string) {
+  await patchDocument(token, 'interviews', { sessions: { [key]: null }, history: { [key]: null } });
+}
+
+type DocumentKind = 'progress' | 'notebook' | 'interviews';
+
+/** Changes one of the account's documents directly, with a merge patch. */
+async function patchDocument(token: string, kind: DocumentKind, patch: Record<string, unknown>) {
   const api = await request.newContext();
   try {
-    const response = await api.patch(`${API}/api/state/notebook`, {
+    const response = await api.patch(`${API}/api/state/${kind}`, {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/merge-patch+json' },
-      data: Object.fromEntries(fields.map((field) => [field, null])),
+      data: patch,
     });
-    if (!response.ok()) throw new Error(`Could not reset the e2e account's notebook: ${response.status()}`);
+    if (!response.ok()) throw new Error(`Could not change the e2e account's ${kind}: ${response.status()}`);
   } finally {
     await api.dispose();
   }
 }
 
 /** One of the account's documents as the server has it. */
-async function serverDocument(token: string, kind: 'progress' | 'notebook'): Promise<Record<string, Record<string, unknown>>> {
+async function serverDocument(token: string, kind: DocumentKind): Promise<Record<string, Record<string, unknown>>> {
   const api = await request.newContext();
   try {
     const response = await api.get(`${API}/api/state`, { headers: { Authorization: `Bearer ${token}` } });
@@ -136,3 +139,6 @@ export const serverProgress = (token: string) => serverDocument(token, 'progress
 
 /** The account's notebook as the server has it. */
 export const serverNotebook = (token: string) => serverDocument(token, 'notebook');
+
+/** The account's mock-interview attempts and checklist ticks as the server has them. */
+export const serverInterviews = (token: string) => serverDocument(token, 'interviews');

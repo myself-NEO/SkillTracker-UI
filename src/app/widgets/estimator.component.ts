@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, output, signal } from '@angular/core';
 import {
   DEFAULT_INPUTS,
   estimate,
@@ -13,7 +14,8 @@ import { uniqueId } from './page';
 
 // The capacity estimator (```estimator blocks, and the /hld/estimator page), ported from
 // TheSWEguide's Estimator.tsx. Inputs accept "10M", "1.5 KB", "3"; every figure updates with the
-// working shown. In Markdown:
+// working shown. It keeps its own values unless it is given `values` (the mock interview stores
+// the learner's, and saves each change from `valuesChange`). In Markdown:
 //
 //   ```estimator title="URL shortener"
 //   requestsPerDay = 100M
@@ -59,6 +61,7 @@ const fromText = (values: EstimatorValues, fallback: EstimateInputs) => {
 
 @Component({
   selector: 'app-estimator',
+  imports: [NgTemplateOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   templateUrl: './estimator.component.html',
@@ -68,6 +71,12 @@ export class EstimatorComponent {
   readonly title = input<string>();
   /** Body of an ```estimator block. */
   readonly preset = input<string>();
+  /** The learner's values, when someone else keeps them; otherwise the estimator keeps its own. */
+  readonly stored = input<EstimatorValues | undefined>(undefined, { alias: 'values' });
+  /** Without the frame and caption, inside another panel. */
+  readonly bare = input(false);
+  /** Every change of the values. */
+  readonly valuesChange = output<EstimatorValues>();
 
   protected readonly id = uniqueId('estimator');
   protected readonly modes = [
@@ -81,8 +90,8 @@ export class EstimatorComponent {
     return preset ? parsePreset(preset).inputs : DEFAULT_INPUTS;
   });
   private readonly initial = computed(() => toText(this.presetInputs()));
-  /** The learner's text, starting from the preset (and back to it if the preset changes). */
-  protected readonly values = linkedSignal(() => this.initial());
+  /** The learner's text: the stored values, or the preset's (and back to it if the preset changes). */
+  protected readonly values = linkedSignal(() => this.stored() ?? this.initial());
   protected readonly showWorking = signal(true);
 
   private readonly parsed = computed(() => fromText(this.values(), this.presetInputs()));
@@ -99,10 +108,15 @@ export class EstimatorComponent {
   protected readonly onRadioGroupKeyDown = onRadioGroupKeyDown;
 
   protected set(key: string, value: string) {
-    this.values.update((values) => ({ ...values, [key]: value }));
+    this.change({ ...this.values(), [key]: value });
   }
 
   protected reset() {
-    this.values.set(this.initial());
+    this.change(this.initial());
+  }
+
+  private change(next: EstimatorValues) {
+    this.values.set(next);
+    this.valuesChange.emit(next);
   }
 }

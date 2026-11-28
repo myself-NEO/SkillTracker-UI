@@ -29,7 +29,7 @@ The answers below are the interviewer's. Questions that change the design come f
   - **A:** Within minutes for a 10-minute video; low resolutions can appear first, higher ones later.
 - **Q:** How fast should playback start? <!-- match: start time, startup, latency, buffering, fast -->
   - **A:** Under 2 seconds to first frame for most viewers.
-- **Q:** Where are the viewers? <!-- match: global, worldwide, regions, where, countries -->
+- **Q:** Where are the viewers — one region or worldwide? <!-- match: global, worldwide, regions, where, countries -->
   - **A:** Worldwide, with very uneven popularity — a few videos get most views, and there's a huge long tail.
 - **Q:** How accurate must view counts be? <!-- match: view count, views counted, accuracy, analytics, counter -->
   - **A:** Approximately real time is fine; counts can lag by minutes, but they shouldn't be inflated by bots or replays.
