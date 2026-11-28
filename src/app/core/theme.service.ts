@@ -16,8 +16,8 @@ const readChoice = (): Theme | null => {
 
 /**
  * Light and dark themes. The visitor's choice is remembered; until they choose, the system setting
- * is followed live. Pages built before the themes existed (Snake, login, the old dashboard) are
- * dark-only: their layouts call `forceDark` while they're shown. index.html sets the same theme
+ * is followed live. Pages built before the themes existed (Snake, login) are dark-only: their
+ * layout calls `forceDark` while they're shown. index.html sets the same theme
  * before the first paint, so pages never flash the wrong one.
  */
 @Injectable({ providedIn: 'root' })

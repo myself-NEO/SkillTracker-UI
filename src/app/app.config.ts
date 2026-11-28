@@ -8,36 +8,6 @@ import { AuthService } from './services/auth.service';
 import { authInterceptor } from './interceptors/auth.interceptor';
 import { apiBaseUrlInterceptor } from './interceptors/api-base-url.interceptor';
 import { unauthorizedInterceptor } from './interceptors/unauthorized.interceptor';
-import { provideLucideIcons,
-  LucideBookOpen,
-  LucideCheck,
-  LucideClock,
-  LucideCode,
-  LucideCompass,
-  LucideShield,
-  LucideSparkles,
-  LucideStar,
-  LucideTarget,
-  LucideTrash2,
-  LucideUser,
-  LucideLogOut,
-  LucideChevronRight,
-  LucideMenu,
-  LucidePlus,
-  LucideCalendar,
-  LucideCircle,
-  LucideCheckCircle2,
-  LucideCheckCircle,
-  LucideHelpCircle,
-  LucideUserCheck,
-  LucideAward,
-  LucideLock,
-  LucideChevronDown,
-  LucideLayoutDashboard,
-  LucideMap,
-  LucideCpu,
-  LucideKeyRound
-} from '@lucide/angular';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -50,37 +20,5 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withFetch(), withInterceptors([unauthorizedInterceptor, authInterceptor, apiBaseUrlInterceptor])),
     // Before the first navigation: pick up a Google sign-in result from the URL (AuthService).
     provideAppInitializer(() => inject(AuthService).captureGoogleRedirect()),
-    
-    // Modern provider registration for Lucide icons
-    provideLucideIcons(
-      LucideBookOpen,
-      LucideCheck,
-      LucideClock,
-      LucideCode,
-      LucideCompass,
-      LucideShield,
-      LucideSparkles,
-      LucideStar,
-      LucideTarget,
-      LucideTrash2,
-      LucideUser,
-      LucideLogOut,
-      LucideChevronRight,
-      LucideMenu,
-      LucidePlus,
-      LucideCalendar,
-      LucideCircle,
-      LucideCheckCircle2,
-      LucideCheckCircle,
-      LucideHelpCircle,
-      LucideUserCheck,
-      LucideAward,
-      LucideLock,
-      LucideChevronDown,
-      LucideLayoutDashboard,
-      LucideMap,
-      LucideCpu,
-      LucideKeyRound
-    )
   ]
 };

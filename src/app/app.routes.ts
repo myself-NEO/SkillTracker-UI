@@ -31,12 +31,11 @@ import { GameLayoutComponent } from './layouts/game-layout.component';
 /** The signed-in frame, loaded with the first page behind the login. */
 const shell = () => import('./shell/shell.component').then((m) => m.ShellComponent);
 
-// Three frames:
+// Two frames:
 // - GameLayout: the public pages, Snake and the login. They load with the app, so the landing page
 //   shows at once.
 // - Shell: the signed-in app, with TheSWEguide's content at TheSWEguide's URLs (/java, /dsa/...), so
 //   links inside lessons work unchanged.
-// - LegacyLayout: the old Dashboard and Roadmaps, out of the navigation and removed in Phase 6.
 // Everything behind the login is loaded on demand, which keeps the first download small.
 
 const topicPage = () => import('./pages/topic/topic-page.component').then((m) => m.TopicPageComponent);
@@ -194,23 +193,9 @@ export const routes: Routes = [
       ...TOPIC_IDS.map(topicRoute),
     ],
   },
-  {
-    path: '',
-    loadComponent: () => import('./layouts/legacy-layout.component').then((m) => m.LegacyLayoutComponent),
-    canActivateChild: [authGuard],
-    children: [
-      {
-        path: 'dashboard',
-        title: 'Dashboard',
-        loadComponent: () => import('./components/dashboard/dashboard.component').then((m) => m.DashboardComponent),
-      },
-      {
-        path: 'roadmaps',
-        title: 'Roadmaps',
-        loadComponent: () => import('./components/roadmaps/roadmaps.component').then((m) => m.RoadmapsComponent),
-      },
-    ],
-  },
+  // The app's pages before the redesign. Bookmarks to them land on the topics.
+  { path: 'dashboard', redirectTo: 'learn' },
+  { path: 'roadmaps', redirectTo: 'learn' },
   {
     // Any other URL: the not-found page inside the app for members, the Snake page for everyone else.
     path: '',
