@@ -34,6 +34,15 @@
             Lesson {{ view.location.index + 1 }} of {{ lessons().length }}
           </span>
         </div>
+        @if (view.track.notebook && !lesson().comingSoon) {
+          <app-lesson-tools
+            [track]="view.track.id"
+            [slug]="lesson().slug"
+            [title]="lesson().title"
+            [context]="view.location.stage.title + ' · ' + view.location.moduleTitle"
+            [topic]="view.location.stage.id"
+          />
+        }
       </header>
 
       <section
@@ -83,7 +92,7 @@
 
       <div class="mt-10">
         @if (view.doc; as doc) {
-          <app-lesson-body [doc]="doc" [page]="{ track: view.track.id, kind: 'lesson', slug: lesson().slug }" />
+          <app-lesson-body [doc]="doc" [page]="bodyPage()" />
         } @else {
           <div class="rounded-xl border border-dashed border-border-strong p-6">
             <p class="font-semibold">This lesson is coming soon</p>
@@ -91,6 +100,18 @@
           </div>
         }
       </div>
+
+      @if (view.track.notebook && !lesson().comingSoon) {
+        <app-notes-box
+          [track]="view.track.id"
+          kind="lesson"
+          [slug]="lesson().slug"
+          [title]="lesson().title"
+          [topic]="view.location.stage.id"
+          [placeholder]="notePlaceholder()"
+          [notebookHref]="view.track.basePath + '/notebook'"
+        />
+      }
 
       <footer class="mt-10">
         <div

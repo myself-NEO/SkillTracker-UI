@@ -7,6 +7,8 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
+  // Signs the test accounts in once per run (e2e/backend.ts).
+  globalSetup: './e2e/global-setup.ts',
   fullyParallel: true,
   // More workers queue up client navigations on the dev server and time out.
   workers: 4,

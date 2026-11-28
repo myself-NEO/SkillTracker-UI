@@ -19,7 +19,10 @@ import {
 import { Router } from '@angular/router';
 import { copyText } from '@lib/clipboard';
 import type { ContentDoc, Widget } from '@lib/content/doc';
+import { NotebookStore } from '../../core/notebook.store';
 import { ProgressStore } from '../../core/progress.store';
+import { QuestionBookmarkComponent, SectionBookmarkComponent } from '../../notebook/revision-tools';
+import { routeLinkClick } from '../../ui/app-links';
 import { ChecklistComponent } from '../../widgets/checklist.component';
 import { DrillComponent } from '../../widgets/drill.component';
 import { EstimatorComponent } from '../../widgets/estimator.component';
@@ -51,8 +54,12 @@ const PROSE = [
  * The HTML is trusted: it is this app's own build output, served from this app's origin, never
  * anything a user typed. It is set as is, so Shiki's inline colours and the build's markup survive.
  *
- * Clicks are handled for the whole body at once: copy buttons, and links to pages of this app or to
- * sections of this page, which go through the router instead of reloading the app.
+ * Clicks are handled for the whole body at once: copy and save buttons, and links to pages of this
+ * app or to sections of this page, which go through the router instead of reloading the app.
+ *
+ * Where the topic has a notebook (`page.notebook`), the notebook's tools are added: a bookmark on
+ * each section heading of a lesson and on each interview question, and "Save" on code blocks and
+ * diagrams.
  */
 @Component({
   selector: 'app-lesson-body',
@@ -63,12 +70,13 @@ const PROSE = [
 export class LessonBodyComponent {
   private readonly router = inject(Router);
   private readonly store = inject(ProgressStore);
+  private readonly notebook = inject(NotebookStore);
   private readonly appRef = inject(ApplicationRef);
   private readonly environment = inject(EnvironmentInjector);
   private readonly injector = inject(Injector);
   private readonly body = viewChild.required<ElementRef<HTMLElement>>('body');
   private widgets: ComponentRef<unknown>[] = [];
-  private readonly copyTimers = new WeakMap<Element, ReturnType<typeof setTimeout>>();
+  private readonly buttonTimers = new WeakMap<Element, ReturnType<typeof setTimeout>>();
 
   readonly doc = input.required<ContentDoc>();
   readonly page = input.required<BodyPage>();
@@ -111,10 +119,55 @@ export class LessonBodyComponent {
     root.innerHTML = doc.html;
     for (const host of Array.from(root.querySelectorAll<HTMLElement>('[data-w]'))) {
       const widget = doc.widgets[Number(host.dataset['w'])];
-      if (!widget) continue;
-      const ref = this.mount(widget, host);
-      this.appRef.attachView(ref.hostView);
-      this.widgets.push(ref);
+      if (widget) this.attach(this.mount(widget, host));
+    }
+    if (this.page().notebook) this.addNotebookTools(root, doc);
+  }
+
+  private attach(ref: ComponentRef<unknown>) {
+    this.appRef.attachView(ref.hostView);
+    this.widgets.push(ref);
+  }
+
+  /** Bookmarks on section headings (lessons) and interview questions, and the code blocks' Save buttons. */
+  private addNotebookTools(root: HTMLElement, doc: ContentDoc) {
+    // A binding belongs to one component, so each gets its own.
+    const page = () => inputBinding('page', () => this.page());
+    const options = { environmentInjector: this.environment, elementInjector: this.injector };
+    if (this.page().kind === 'lesson') {
+      for (const heading of Array.from(root.querySelectorAll<HTMLElement>(':scope > h2[id]'))) {
+        const title = heading.textContent?.trim() ?? '';
+        const hostElement = root.ownerDocument.createElement('span');
+        heading.classList.add('group');
+        heading.appendChild(hostElement);
+        this.attach(
+          createComponent(SectionBookmarkComponent, {
+            ...options,
+            hostElement,
+            bindings: [inputBinding('id', () => heading.id), inputBinding('title', () => title), page()],
+          }),
+        );
+      }
+    }
+    for (const hostElement of Array.from(root.querySelectorAll<HTMLElement>('[data-slot="question-bookmark"]'))) {
+      const id = hostElement.closest<HTMLElement>('[data-question]')?.dataset['question'];
+      const question = id ? doc.questions[id] : undefined;
+      if (!id || !question) continue;
+      this.attach(
+        createComponent(QuestionBookmarkComponent, {
+          ...options,
+          hostElement,
+          bindings: [
+            inputBinding('id', () => id),
+            inputBinding('title', () => question.title),
+            inputBinding('body', () => question.body),
+            page(),
+          ],
+        }),
+      );
+    }
+    for (const button of Array.from(root.querySelectorAll<HTMLButtonElement>('button[data-action="save-snippet"]'))) {
+      button.hidden = false;
     }
   }
 
@@ -126,7 +179,11 @@ export class LessonBodyComponent {
       case 'mermaid':
         return createComponent(MermaidDiagramComponent, {
           ...options,
-          bindings: [inputBinding('source', () => widget.source), inputBinding('title', () => widget.title)],
+          bindings: [
+            inputBinding('source', () => widget.source),
+            inputBinding('title', () => widget.title),
+            ...(this.page().notebook ? [inputBinding('save', () => this.saveDiagram)] : []),
+          ],
         });
       case 'quiz':
         return createComponent(QuizComponent, { ...options, bindings: [inputBinding('widget', () => widget), page] });
@@ -159,43 +216,68 @@ export class LessonBodyComponent {
       void this.copyCode(copy);
       return;
     }
-    const link = target?.closest<HTMLAnchorElement>('a[href]');
-    if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+    const save = target?.closest<HTMLButtonElement>('button[data-action="save-snippet"]');
+    if (save) {
+      this.saveSnippet(save);
       return;
     }
-    if (link.target && link.target !== '_self') return; // other sites open in a new tab
-    const href = link.getAttribute('href') ?? '';
-    if (href.startsWith('#') && href.length > 1) {
-      // A section of this page. (With <base href="/">, the browser would otherwise leave the page.)
-      event.preventDefault();
-      const url = this.router.parseUrl(this.router.url);
-      url.fragment = decodeURIComponent(href.slice(1));
-      void this.router.navigateByUrl(url);
-    } else if (href.startsWith('/') && !href.startsWith('//')) {
-      // Another page of this app.
-      event.preventDefault();
-      void this.router.navigateByUrl(href);
-    }
+    routeLinkClick(event, this.router);
   }
+
+  /** "Save" on a code block: a copy of the code goes to the notebook. */
+  private saveSnippet(button: HTMLButtonElement) {
+    const page = this.page();
+    const block = button.closest<HTMLElement>('[data-code]');
+    if (!page.notebook || !block) return;
+    this.notebook.addSnippet({
+      track: page.track,
+      title: `${block.dataset['label'] ?? 'Code'} (${page.notebook.title})`,
+      code: block.querySelector('.code-block pre')?.textContent ?? '',
+      language: block.dataset['code'] ?? 'text',
+      topic: page.notebook.topic,
+      lesson: page.kind === 'lesson' ? page.slug : undefined,
+      href: page.notebook.href,
+    });
+    this.flash(button, 'Saved', 'Snippet saved to your notebook', 'Save', 'Save snippet to your notebook');
+  }
+
+  /** "Save" on a diagram: its source goes to the notebook. */
+  private readonly saveDiagram = (source: string, title: string | undefined) => {
+    const page = this.page();
+    if (!page.notebook) return;
+    this.notebook.addSnippet({
+      track: page.track,
+      title: title ? `${title} (${page.notebook.title})` : page.notebook.title,
+      code: source,
+      language: 'mermaid',
+      topic: page.notebook.topic,
+      lesson: page.kind === 'lesson' ? page.slug : undefined,
+      href: page.notebook.href,
+    });
+  };
 
   /** Copies a code block's text; the button says how it went for two seconds. */
   private async copyCode(button: HTMLButtonElement) {
     const code = button.closest('[data-code]')?.querySelector('.code-block pre');
-    const label = button.querySelector('[aria-live]');
-    let outcome = 'Copied!';
     try {
       await copyText(code?.textContent ?? '');
-      button.setAttribute('aria-label', 'Code copied');
+      this.flash(button, 'Copied!', 'Code copied', 'Copy', 'Copy code');
     } catch {
-      outcome = 'Copy failed';
+      this.flash(button, 'Copy failed', 'Copy code', 'Copy', 'Copy code');
     }
-    if (label) label.textContent = outcome;
-    clearTimeout(this.copyTimers.get(button));
-    this.copyTimers.set(
+  }
+
+  /** Shows what a code block's button did, for two seconds. */
+  private flash(button: HTMLButtonElement, text: string, label: string, idleText: string, idleLabel: string) {
+    const live = button.querySelector('[aria-live]');
+    if (live) live.textContent = text;
+    button.setAttribute('aria-label', label);
+    clearTimeout(this.buttonTimers.get(button));
+    this.buttonTimers.set(
       button,
       setTimeout(() => {
-        if (label) label.textContent = 'Copy';
-        button.setAttribute('aria-label', 'Copy code');
+        if (live) live.textContent = idleText;
+        button.setAttribute('aria-label', idleLabel);
       }, 2000),
     );
   }

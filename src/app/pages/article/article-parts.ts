@@ -206,16 +206,17 @@ const BADGE_CLASSES: Record<ProblemStatus, string> = {
   completed: 'text-success bg-success-soft border-success/30',
 };
 
-/** A problem's status as a coloured badge. */
+/** A problem's status as a coloured badge; `label` overrides the name, e.g. "Solved" for a coding question. */
 @Component({
   selector: 'app-status-badge',
   imports: [ProblemStatusIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[class]': 'classes()' },
-  template: `<svg [appProblemStatusIcon]="status()" class="size-3.5"></svg>{{ STATUS_LABEL[status()] }}`,
+  template: `<svg [appProblemStatusIcon]="status()" class="size-3.5"></svg>{{ label() ?? STATUS_LABEL[status()] }}`,
 })
 export class StatusBadgeComponent {
   readonly status = input.required<ProblemStatus>();
+  readonly label = input<string>();
   protected readonly STATUS_LABEL = STATUS_LABEL;
   protected readonly classes = computed(
     () =>

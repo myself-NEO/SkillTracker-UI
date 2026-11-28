@@ -11,7 +11,8 @@ import { UserStorage } from './user-storage';
 
 /**
  * The learner's checklist ticks and (from Phase 6) mock-interview sessions, kept in this browser
- * under their account (`st:<userId>:learning-interviews-v1`, see UserStorage).
+ * under their account (`st:<userId>:learning-interviews-v1`) and with the account on the server
+ * (UserStorage, StateSync).
  */
 @Injectable({ providedIn: 'root' })
 export class InterviewsStore {
@@ -19,6 +20,7 @@ export class InterviewsStore {
     key: INTERVIEWS_KEY,
     empty: EMPTY_INTERVIEWS,
     sanitize: sanitizeInterviews,
+    sync: 'interviews',
   });
 
   readonly state = this.storage.value;

@@ -17,7 +17,7 @@ import { copyText } from '@lib/clipboard';
 import { diagramType, MERMAID_STEP_COLOR, MERMAID_THEME_VARIABLES, prepareSource, type Theme } from '@lib/diagrams/mermaid';
 import { ThemeService } from '../../core/theme.service';
 
-// Mermaid diagrams (```mermaid title="…" in lessons), ported from TheSWEguide's MermaidDiagram.tsx.
+// Mermaid diagrams (```mermaid title="…" in lessons and notes), ported from TheSWEguide's MermaidDiagram.tsx.
 // Mermaid is a large library and drawing a diagram takes a while, so it is imported on first use,
 // and each diagram is drawn only once it comes within 1,200 pixels of the viewport. Diagrams are
 // drawn again in the other theme's colours when the reader switches.
@@ -105,6 +105,10 @@ export class MermaidDiagramComponent {
 
   readonly source = input.required<string>();
   readonly title = input<string>();
+  /** Without the toolbar, e.g. a preview beside the editor. */
+  readonly compact = input(false);
+  /** Saves the diagram to the learner's notebook; without it there is no Save button. */
+  readonly save = input<(source: string, title: string | undefined) => void>();
 
   protected readonly type = computed(() => diagramType(this.source()));
   protected readonly label = computed(
@@ -113,6 +117,7 @@ export class MermaidDiagramComponent {
   protected readonly state = signal<RenderState>({ status: 'loading' });
   protected readonly showText = signal(false);
   protected readonly copied = signal(false);
+  protected readonly saved = signal(false);
   protected readonly steps = signal<Step[]>([]);
   protected readonly current = signal(-1);
   protected readonly zoom = signal(1);
@@ -238,6 +243,14 @@ export class MermaidDiagramComponent {
   /** A click on the backdrop (the dialog element itself, outside its content) closes it. */
   protected onDialogClick(event: MouseEvent) {
     if (event.target === this.dialog().nativeElement) this.closeExpanded();
+  }
+
+  protected saveDiagram() {
+    const save = this.save();
+    if (!save) return;
+    save(this.trimmed(), this.title());
+    this.saved.set(true);
+    setTimeout(() => this.saved.set(false), 2000);
   }
 
   protected async copySource() {

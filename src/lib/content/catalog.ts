@@ -33,6 +33,12 @@ export interface TrackFile extends Track {
   writtenProblems: string[];
 }
 
+/**
+ * public/content/java/interview-questions.json: the Java question bank by question id, so the
+ * notebook can name and link questions flagged for revision without loading the bank.
+ */
+export type JavaQuestionIndex = Record<string, { title: string; topic: string }>;
+
 /** public/content/dsa/practice.json */
 export interface DsaPractice {
   topics: PracticeTopic[];

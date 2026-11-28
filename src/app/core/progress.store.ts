@@ -12,8 +12,8 @@ import { UserStorage } from './user-storage';
 
 /**
  * The signed-in learner's progress (lessons completed and visited, quiz answers, problem statuses,
- * where to continue), kept in this browser under their account (`st:<userId>:learning-progress-v1`,
- * see UserStorage).
+ * where to continue), kept in this browser under their account (`st:<userId>:learning-progress-v1`)
+ * and with the account on the server (UserStorage, StateSync).
  */
 @Injectable({ providedIn: 'root' })
 export class ProgressStore {
@@ -21,6 +21,7 @@ export class ProgressStore {
     key: PROGRESS_KEY,
     empty: EMPTY_PROGRESS,
     sanitize: sanitizeProgress,
+    sync: 'progress',
   });
 
   /** The current progress; read it in templates and computed signals. */

@@ -8,6 +8,19 @@ export interface BodyPage {
   track: TrackId;
   kind: 'lesson' | 'problem' | 'cheatsheet';
   slug: string;
+  /**
+   * Set where the topic has a notebook (Java, LLD, HLD): what its tools (section and question
+   * bookmarks, saving code and diagrams) record about the page.
+   */
+  notebook?: NotebookPage;
+}
+
+export interface NotebookPage {
+  /** The page's title, e.g. the lesson's. */
+  title: string;
+  /** Stage id of a lesson, or "problems". */
+  topic: string;
+  href: string;
 }
 
 /** Key under which a page's checklist ticks are kept, e.g. "hld:problem:url-shortener"; cheat sheets keep none. */

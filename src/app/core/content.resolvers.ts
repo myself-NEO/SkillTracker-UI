@@ -4,7 +4,7 @@ import { CanMatchFn, ResolveFn } from '@angular/router';
 import type { Cheatsheet } from '@content/dsa/cheatsheets';
 import { findLesson, flattenLessons, type LessonLocation } from '@content/shared/curriculum';
 import type { ProblemMeta } from '@content/shared/types';
-import type { ContentIndex, DsaPractice, TrackFile, VisualizeIndex } from '@lib/content/catalog';
+import type { ContentIndex, DsaPractice, JavaQuestionIndex, TrackFile, VisualizeIndex } from '@lib/content/catalog';
 import type { ContentDoc } from '@lib/content/doc';
 import { practiceCopy } from '@lib/content/practice';
 import { RESERVED_SEGMENTS } from '@lib/routes';
@@ -31,6 +31,12 @@ export const dsaPracticeResolver: ResolveFn<DsaPractice | null> = () =>
   inject(ContentService)
     .dsaPractice()
     .catch(() => null);
+
+/** The Java question bank's titles, for the notebook; without them it shows what it saved. */
+export const javaQuestionsResolver: ResolveFn<JavaQuestionIndex> = () =>
+  inject(ContentService)
+    .javaQuestions()
+    .catch(() => ({}));
 
 export const visualizeResolver: ResolveFn<VisualizeIndex | null> = () =>
   inject(ContentService)
@@ -157,6 +163,17 @@ export const problemTitleResolver: ResolveFn<string> = async (route) => {
     return problem ? `${problem.title} · ${track.shortTitle}` : 'Page not found';
   } catch {
     return track404Title(topic);
+  }
+};
+
+/** "Arrays & Hashing · Coding questions · DSA" */
+export const codingTopicTitleResolver: ResolveFn<string> = async (route) => {
+  try {
+    const { topics } = await inject(ContentService).dsaPractice();
+    const topic = topics.find((candidate) => candidate.id === route.paramMap.get('practiceTopic'));
+    return topic ? `${topic.title} · Coding questions · DSA` : 'Page not found';
+  } catch {
+    return 'Coding questions · DSA';
   }
 };
 

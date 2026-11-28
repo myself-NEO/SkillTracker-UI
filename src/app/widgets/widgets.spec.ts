@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import type { ChecklistWidget, DrillWidget, QuizWidget } from '@lib/content/doc';
 import { questionHash } from '@lib/progress/hash';
 import { InterviewsStore } from '../core/interviews.store';
+import { StateSync } from '../core/state-sync.service';
 import { ProgressStore } from '../core/progress.store';
 import { AuthService } from '../services/auth.service';
 import { ChecklistComponent } from './checklist.component';
@@ -11,6 +12,9 @@ import { EstimatorComponent } from './estimator.component';
 import type { BodyPage } from './page';
 import { QuizComponent } from './quiz.component';
 
+
+/** These tests are about the widgets, not about saving to the account. */
+const NO_SYNC = { provide: StateSync, useValue: { register: () => {}, changed: () => {} } };
 const text = (value: string) => ({ text: value, html: value });
 
 const QUIZ: QuizWidget = {
@@ -69,7 +73,7 @@ class HostComponent {
 describe('lesson widgets', () => {
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({ providers: [{ provide: AuthService, useValue: { userId: signal('user-1') } }] });
+    TestBed.configureTestingModule({ providers: [{ provide: AuthService, useValue: { userId: signal('user-1') } }, NO_SYNC] });
   });
 
   const render = async (kind: 'quiz' | 'drill' | 'checklist' | 'estimator', page: BodyPage = LESSON) => {

@@ -1,0 +1,127 @@
+@if (missing()) {
+  <app-not-found />
+} @else {
+  <main id="main-content" data-track="dsa">
+    <app-topic-tabs topic="dsa" active="problems" />
+    @if (practice()) {
+      <div class="mx-auto w-full max-w-[90rem] px-4 py-10 sm:px-6">
+        <app-breadcrumb [items]="breadcrumb()" />
+
+        <header class="mt-6 mb-8 flex flex-col justify-between gap-6 md:flex-row md:items-end">
+          <div>
+            <p class="mb-2 text-sm font-semibold text-accent">Practice · LeetCode</p>
+            <h1 class="mb-3 font-display text-4xl leading-tight font-bold tracking-tight text-fg sm:text-5xl">Coding questions</h1>
+            <p class="max-w-2xl text-muted">
+              {{ total() }} hand-picked LeetCode problems in {{ topicCount() }} topics, each ordered from easy to hard and
+              linked to the guide that teaches the technique. Solve them on LeetCode, then record your status, flag the ones to
+              revisit and keep notes. Everything is saved to your account.
+            </p>
+          </div>
+          <div class="w-full rounded-xl border border-border bg-surface p-4 md:w-72">
+            <p class="mb-2 text-sm text-fg-soft">
+              <span class="text-2xl font-bold text-fg">{{ solvedCount() }}</span> / {{ total() }} solved
+            </p>
+            <app-progress-bar [value]="solvedCount()" [max]="total()" label="Coding questions solved" />
+            <p class="mt-2 text-xs text-muted">{{ byDifficulty() }}</p>
+          </div>
+        </header>
+
+        <div class="mb-8 space-y-3 rounded-xl border border-border bg-surface p-4">
+          <div class="flex flex-col gap-3 sm:flex-row">
+            <label class="relative block flex-1">
+              <span class="sr-only">Search coding questions</span>
+              <svg appSearchIcon class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted"></svg>
+              <input
+                type="search"
+                [value]="query()"
+                (input)="query.set($any($event.target).value)"
+                placeholder="Search by number, title or pattern (e.g. “two pointers”, “dijkstra”)"
+                class="w-full rounded-lg border border-border bg-bg py-2.5 pr-3 pl-9 text-sm text-fg placeholder:text-faint focus:ring-2 focus:ring-accent focus:outline-hidden"
+              />
+            </label>
+            <label for="problem-topic" class="sr-only">Filter by topic</label>
+            <select
+              id="problem-topic"
+              (change)="topic.set($any($event.target).value)"
+              class="rounded-lg border border-border bg-bg px-3 py-2.5 text-sm text-fg focus:ring-2 focus:ring-accent focus:outline-hidden"
+            >
+              <option value="all" [selected]="topic() === 'all'">All topics</option>
+              @for (option of practice()!.topics; track option.id) {
+                <option [value]="option.id" [selected]="topic() === option.id">{{ option.title }}</option>
+              }
+            </select>
+          </div>
+          <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by difficulty">
+            <span class="w-20 text-xs font-semibold tracking-wider text-muted uppercase">Difficulty</span>
+            <button type="button" [class]="filterClass(difficulty() === 'all')" [attr.aria-pressed]="difficulty() === 'all'" (click)="difficulty.set('all')">
+              All
+            </button>
+            @for (option of difficulties; track option) {
+              <button type="button" [class]="filterClass(difficulty() === option)" [attr.aria-pressed]="difficulty() === option" (click)="difficulty.set(option)">
+                {{ option }}
+              </button>
+            }
+          </div>
+          <div class="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by status">
+            <span class="w-20 text-xs font-semibold tracking-wider text-muted uppercase">Status</span>
+            <button type="button" [class]="filterClass(status() === 'all')" [attr.aria-pressed]="status() === 'all'" (click)="status.set('all')">
+              All
+            </button>
+            @for (option of statuses; track option) {
+              <button type="button" [class]="filterClass(status() === option)" [attr.aria-pressed]="status() === option" (click)="status.set(option)">
+                {{ statusLabel[option] }}
+              </button>
+            }
+          </div>
+          <div class="flex flex-wrap items-center gap-2" role="group" aria-label="More filters">
+            <span class="w-20 text-xs font-semibold tracking-wider text-muted uppercase">Show</span>
+            <button type="button" [class]="filterClass(revisitOnly())" [attr.aria-pressed]="revisitOnly()" (click)="revisitOnly.set(!revisitOnly())">
+              Marked to revisit
+            </button>
+            <button type="button" [class]="filterClass(notesOnly())" [attr.aria-pressed]="notesOnly()" (click)="notesOnly.set(!notesOnly())">
+              With notes
+            </button>
+            @if (hasFilters()) {
+              <button type="button" (click)="clearFilters()" class="ml-auto text-sm font-medium text-accent hover:underline">Clear filters</button>
+            }
+          </div>
+        </div>
+
+        <p class="sr-only" role="status">{{ filtered().length }} coding questions shown</p>
+
+        @if (filtered().length === 0) {
+          <div class="rounded-xl border border-dashed border-border py-16 text-center">
+            <p class="mb-1 font-semibold text-fg-soft">No coding questions match these filters.</p>
+            <p class="mb-4 text-sm text-muted">Try a different search term or clear the filters.</p>
+            <button type="button" (click)="clearFilters()" class="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-fg hover:opacity-90">
+              Clear filters
+            </button>
+          </div>
+        } @else {
+          @for (section of sections(); track section.topic.id) {
+            <section [attr.aria-labelledby]="'topic-' + section.topic.id" class="mb-10" [attr.data-topic]="section.topic.id">
+              <div class="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <h2 [id]="'topic-' + section.topic.id" class="text-xl font-bold text-fg">{{ section.topic.title }}</h2>
+                  <span class="text-sm text-muted">{{ section.done }}/{{ section.total }} solved</span>
+                </div>
+                @if (section.guide; as guide) {
+                  <a [routerLink]="guide.href" class="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline">
+                    Guide: {{ guide.title }} <svg appArrowIcon class="size-3.5"></svg>
+                  </a>
+                }
+              </div>
+              <ol class="space-y-2.5">
+                @for (problem of section.items; track problem.id) {
+                  <li appCodingQuestion [problem]="problem"></li>
+                }
+              </ol>
+            </section>
+          }
+        }
+      </div>
+    } @else {
+      <app-load-error />
+    }
+  </main>
+}

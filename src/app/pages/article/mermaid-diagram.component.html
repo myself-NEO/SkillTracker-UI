@@ -1,33 +1,46 @@
 <figure
-  class="not-prose my-6 overflow-hidden rounded-xl border border-border bg-code"
+  class="not-prose overflow-hidden rounded-xl border border-border bg-code"
+  [class.my-6]="!compact()"
   [attr.data-diagram]="state().status"
   [attr.data-diagram-type]="type()"
 >
-  <figcaption class="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-1.5">
-    <span class="min-w-0 text-xs font-semibold tracking-wider text-muted uppercase">{{ label() }}</span>
-    <span class="flex flex-wrap items-center gap-0.5">
-      @if (steps().length > 0 && current() < 0) {
-        <button type="button" (click)="current.set(0)" class="mermaid-tool text-accent!">
-          ▶ Step through ({{ steps().length }})
+  @if (!compact()) {
+    <figcaption class="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-1.5">
+      <span class="min-w-0 text-xs font-semibold tracking-wider text-muted uppercase">{{ label() }}</span>
+      <span class="flex flex-wrap items-center gap-0.5">
+        @if (steps().length > 0 && current() < 0) {
+          <button type="button" (click)="current.set(0)" class="mermaid-tool text-accent!">
+            ▶ Step through ({{ steps().length }})
+          </button>
+        }
+        <button
+          type="button"
+          (click)="openExpanded()"
+          [disabled]="state().status !== 'ready'"
+          class="mermaid-tool disabled:opacity-50"
+          aria-haspopup="dialog"
+        >
+          ⤢ Expand
         </button>
-      }
-      <button
-        type="button"
-        (click)="openExpanded()"
-        [disabled]="state().status !== 'ready'"
-        class="mermaid-tool disabled:opacity-50"
-        aria-haspopup="dialog"
-      >
-        ⤢ Expand
-      </button>
-      <button type="button" (click)="showText.set(!showText())" [attr.aria-pressed]="showText()" class="mermaid-tool">
-        {{ showText() ? 'Hide text' : 'Text' }}
-      </button>
-      <button type="button" (click)="copySource()" class="mermaid-tool">
-        <span aria-live="polite">{{ copied() ? 'Copied!' : 'Copy' }}</span>
-      </button>
-    </span>
-  </figcaption>
+        <button type="button" (click)="showText.set(!showText())" [attr.aria-pressed]="showText()" class="mermaid-tool">
+          {{ showText() ? 'Hide text' : 'Text' }}
+        </button>
+        <button type="button" (click)="copySource()" class="mermaid-tool">
+          <span aria-live="polite">{{ copied() ? 'Copied!' : 'Copy' }}</span>
+        </button>
+        @if (save()) {
+          <button
+            type="button"
+            (click)="saveDiagram()"
+            class="mermaid-tool"
+            [attr.aria-label]="saved() ? 'Diagram saved to your notebook' : 'Save diagram to your notebook'"
+          >
+            <span aria-live="polite">{{ saved() ? 'Saved' : 'Save' }}</span>
+          </button>
+        }
+      </span>
+    </figcaption>
+  }
 
   @if (current() >= 0) {
     <div

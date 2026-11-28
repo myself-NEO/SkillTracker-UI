@@ -3,12 +3,13 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TOPICS } from '@lib/topics';
 import { AccountMenuComponent } from './account-menu.component';
 import { SearchComponent } from './search.component';
+import { SyncStatusComponent } from './sync-status.component';
 import { ThemeToggleComponent } from './theme-toggle.component';
 
 /** The signed-in header: the brand, the four topics and Mock Interview, search, the theme switch and the account. */
 @Component({
   selector: 'app-site-header',
-  imports: [RouterLink, RouterLinkActive, SearchComponent, ThemeToggleComponent, AccountMenuComponent],
+  imports: [RouterLink, RouterLinkActive, SyncStatusComponent, SearchComponent, ThemeToggleComponent, AccountMenuComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="sticky top-0 z-40 border-b border-border bg-bg/85 backdrop-blur-md">
@@ -55,6 +56,7 @@ import { ThemeToggleComponent } from './theme-toggle.component';
           </a>
         </nav>
         <div class="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+          <app-sync-status />
           <app-search />
           <!-- On phones the theme switch is in the account menu, which leaves room for the tabs. -->
           <app-theme-toggle class="hidden sm:block" />

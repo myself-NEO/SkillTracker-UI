@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import type { ContentIndex, DsaPractice, TrackFile, VisualizeIndex } from '@lib/content/catalog';
+import type { ContentIndex, DsaPractice, JavaQuestionIndex, TrackFile, VisualizeIndex } from '@lib/content/catalog';
 import type { ContentDoc } from '@lib/content/doc';
 import type { TopicId } from '@lib/topics';
 
@@ -37,6 +37,11 @@ export class ContentService {
   /** The animation gallery's scenes. */
   visualize(): Promise<VisualizeIndex> {
     return this.cached(this.catalog, '/content/visualize.json');
+  }
+
+  /** The Java question bank's titles by question id (for the notebook). */
+  javaQuestions(): Promise<JavaQuestionIndex> {
+    return this.cached(this.catalog, '/content/java/interview-questions.json');
   }
 
   lesson(topic: TopicId, slug: string): Promise<ContentDoc> {
