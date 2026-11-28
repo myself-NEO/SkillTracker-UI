@@ -141,9 +141,10 @@ test.describe('reading (needs the local backend)', () => {
     await clearProgress(token, { lessons: { 'java:annotations': null } });
   });
 
-  test('pages not ported yet say so', async ({ page }) => {
-    await page.goto('/lld/interview');
-    await expect(page.getByRole('heading', { level: 1, name: 'This page is on its way' })).toBeVisible();
+  test('pages that do not exist say so', async ({ page }) => {
+    // DSA has no interview section, and the name is never a lesson's.
+    await page.goto('/dsa/interview');
+    await expect(page.getByRole('heading', { level: 1, name: 'This page doesn’t exist' })).toBeVisible();
     await page.goto('/java/no-such-lesson');
     await expect(page.getByRole('heading', { level: 1, name: 'This page doesn’t exist' })).toBeVisible();
   });

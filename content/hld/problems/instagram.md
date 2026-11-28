@@ -27,7 +27,7 @@ The answers below are the interviewer's. Questions that change the design come f
 - **Q:** What latency do we need? <!-- match: latency, fast, p99, load time, speed -->
   - **A:** The first feed page within 300 ms at p99 (excluding image downloads), and images should start loading quickly anywhere in the
     world.
-- **Q:** Where are the users? <!-- match: global, worldwide, regions, countries, where are users, geography -->
+- **Q:** Where are the users — one region or worldwide? <!-- match: global, worldwide, regions, countries, where are users, geography -->
   - **A:** Worldwide.
 - **Q:** How quickly must a new post appear for followers? <!-- match: fresh, freshness, appear, delay, how quickly, real time -->
   - **A:** Within a few seconds normally; up to a minute during peaks is acceptable.

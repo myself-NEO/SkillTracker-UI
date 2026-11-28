@@ -11,3 +11,8 @@ if (dom) {
     }
   }
 }
+
+// jsdom doesn't lay pages out, so it has no scrollIntoView; pages that scroll a part into view call it.
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}

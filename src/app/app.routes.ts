@@ -17,6 +17,8 @@ import {
   lessonSlugMatch,
   lessonTitleResolver,
   libraryTitleResolver,
+  mockInterviewResolver,
+  mockInterviewTitleResolver,
   problemResolver,
   problemTitleResolver,
   sceneTitleResolver,
@@ -50,12 +52,16 @@ const dsaNotesPage = () => import('./pages/dsa/dsa-notes-page.component').then((
 const javaBankPage = () => import('./pages/interview/java-bank-page.component').then((m) => m.JavaBankPageComponent);
 const javaBankTopicPage = () =>
   import('./pages/interview/java-bank-topic-page.component').then((m) => m.JavaBankTopicPageComponent);
+const mockListPage = () => import('./pages/interview/mock/mock-list-page.component').then((m) => m.MockListPageComponent);
+const mockProblemPage = () =>
+  import('./pages/interview/mock/mock-problem-page.component').then((m) => m.MockProblemPageComponent);
 
 /**
  * One topic's pages, e.g. /java. The topic is in the route data; its curriculum is resolved once for
- * all of them (and DSA's coding questions). Section pages come before /:lesson, which leaves the
- * sections not ported yet (lessonSlugMatch) to the not-found page. DSA's practice is its
- * coding-question list (/dsa/problems), and it has interview notes instead of a notebook.
+ * all of them (and DSA's coding questions). Section pages come before /:lesson, which never takes a
+ * section's name (lessonSlugMatch): a section the topic doesn't have is a page that doesn't exist.
+ * DSA's practice is its coding-question list (/dsa/problems), and it has interview notes instead of
+ * a notebook; Java's interview prep is a question bank, LLD's and HLD's are mock interviews.
  */
 const topicRoute = (topic: TopicId): Route => ({
   path: topic,
@@ -98,6 +104,22 @@ const topicRoute = (topic: TopicId): Route => ({
             title: javaBankTitleResolver,
             resolve: { page: javaBankResolver },
             loadComponent: javaBankTopicPage,
+          },
+        ]
+      : []),
+    // LLD and HLD: every practice problem as a timed mock interview.
+    ...(topic === 'lld' || topic === 'hld'
+      ? [
+          {
+            path: 'interview',
+            title: `${TOPICS.find((info) => info.id === topic)!.shortTitle} mock interviews`,
+            loadComponent: mockListPage,
+          },
+          {
+            path: 'interview/:problem',
+            title: mockInterviewTitleResolver,
+            resolve: { page: mockInterviewResolver },
+            loadComponent: mockProblemPage,
           },
         ]
       : []),

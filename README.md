@@ -104,14 +104,20 @@ decides where Google sign-in may return.
 - `pages/interview`: Java's interview question bank (`/java/interview`), each question practised
   with a draft, hints, the model answer and a self-rating, kept in the notebook. The content build
   renders the bank into `public/content/java/interview/<topic>.json`.
+- `pages/interview/mock`: LLD's and HLD's timed mock interviews (`/hld/interview/url-shortener`):
+  clarifying questions answered from the problem's script, a phase-by-phase draft with hints and
+  the reference, the architecture or class diagram with a live preview, and a self-evaluation on
+  the rubric. Attempts are kept with the account. The content build parses each written problem's
+  breakdown into `public/content/<lld|hld>/interview/<slug>.json`; the kits (phases, budgets,
+  guidance, rubric, keyword matching) are in `src/lib/interview/mock.ts`.
 - `pages/progress`: each topic's progress dashboard (`/java/progress`). `pages/dsa`: DSA's coding
   questions (`/dsa/problems`, status, revisit flag and notes per LeetCode question; helpers in
   `src/lib/dsa`) and its interview notes (`/dsa/notes`), which DSA has instead of a notebook.
-- `src/app/core`: the theme, the learner's progress, checklist ticks and notebook, the generated
-  content files and their route resolvers, scrolling and page titles. Progress, ticks and the
-  notebook are kept in this browser per account (`user-storage.ts`) and saved to the account in the
-  background (`state-sync.service.ts`, `GET`/`PATCH /api/state`). The header shows whether the
-  latest changes have been saved.
+- `src/app/core`: the theme, the learner's progress, notebook, checklist ticks and mock-interview
+  attempts, the generated content files and their route resolvers, scrolling and page titles.
+  Progress, the notebook and the interviews are kept in this browser per account
+  (`user-storage.ts`) and saved to the account in the background (`state-sync.service.ts`,
+  `GET`/`PATCH /api/state`). The header shows whether the latest changes have been saved.
 - `src/lib/markdown/client.ts`: notes and saved answers are Markdown. They are rendered in the
   browser by building the page elements from the parsed Markdown against an allowlist, never by
   using the text as HTML.

@@ -199,17 +199,15 @@ export const duplicates = (values: readonly string[]) => {
 };
 
 export interface SiteRoutes {
-  /** Paths the site serves now. */
+  /** Paths the site serves. */
   pages: ReadonlySet<string>;
-  /** Paths of section pages that arrive in a later phase (practice library, notebook, interviews, …). */
-  planned: ReadonlySet<string>;
 }
 
-export type LinkVerdict = 'ok' | 'planned' | 'external' | 'anchor' | { broken: string };
+export type LinkVerdict = 'ok' | 'external' | 'anchor' | { broken: string };
 
 /**
  * Whether a link in a lesson of the track with `basePath` resolves. `lesson:` and `problem:`
- * links point within the track; absolute paths must be pages the site serves or will serve.
+ * links point within the track; absolute paths must be pages the site serves.
  */
 export const checkLink = (url: string, basePath: string, routes: SiteRoutes): LinkVerdict => {
   if (/^(https?:|mailto:)/.test(url)) return 'external';
@@ -221,6 +219,5 @@ export const checkLink = (url: string, basePath: string, routes: SiteRoutes): Li
   else return { broken: `relative link "${url}": use lesson:, problem: or an absolute path` };
   const [pathname] = path.split('#');
   if (routes.pages.has(pathname)) return 'ok';
-  if (routes.planned.has(pathname)) return 'planned';
   return { broken: `"${url}" points to ${pathname}, which is not a page of the site` };
 };

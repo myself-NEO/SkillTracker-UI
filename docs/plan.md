@@ -98,6 +98,7 @@ How the design hides Render's cold start:
 - `GlobalExceptionHandler` extends `ResponseEntityExceptionHandler`, with a generic 500 body.
 - Dockerfile: `exec java` plus `-XX:+ExitOnOutOfMemoryError`.
 - `open-in-view: false`, graceful shutdown.
+- State documents come back without their null members (`spring.jackson.default-property-inclusion: non_null`). Return them as JSON trees, so they come back exactly as saved. The UI copes meanwhile (Phase 6a.2).
 
 ## Phase 1: UI groundwork (SkillTracker-UI)
 - **Backend URL:** point `src/environments/environment.ts` at the new Singapore Render service. Deploying this UI to Vercel takes the live app off the old US backend.
@@ -367,7 +368,7 @@ Split into three:
 - **6a.2:** the timed LLD/HLD mock interviews (`/lld|hld/interview`), with their kits, rubric, editors and attempt history.
 - **6a.3:** the `/mock-interview` hub (practise and schedule), and the backend's `/api/interviews`.
 
-**Phase 6a.1 (done 2026-11-28, in review): the Java question bank.**
+**Phase 6a.1 (done and committed 2026-11-28): the Java question bank.**
 - **Content build:**
   - Each bank topic is written as `public/content/java/interview/<topic>.json`, with its questions' Markdown (question detail, hints, answer, "why other answers fall short", follow-up) rendered like the lessons: highlighted code with copy buttons.
   - `tricky.json` holds the 71 tricky questions of every topic. The 14 topic files and `tricky.json` come to 175 KB gzipped, about 12 KB per topic.
@@ -389,6 +390,36 @@ Split into three:
   - the bank's helpers;
   - a question's practice (draft, hints, answer, rating, bookmark);
   - e2e: practising a question from a `#q-…` link, a miss reaching the notebook's revision list, and the account.
+
+**Phase 6a.2 (done 2026-11-28, in review): the timed LLD and HLD mock interviews.**
+- **Content build:**
+  - Each written LLD and HLD problem's breakdown is parsed into its interview script (`content/hld/interview.ts`, `content/lld/interview.ts`) and written as `public/content/<lld|hld>/interview/<slug>.json`.
+  - The script's Markdown is left for the browser to render as the learner opens each part, as TheSWEguide did. Only the checklist is rendered, for the checklist widget.
+  - 58 files (26 LLD, 32 HLD), 586 KB gzipped, 16 KB at most.
+- **`/lld/interview` and `/hld/interview`:** every practice problem by level, with its status, the attempt in progress ("Resume interview"), the number of attempts and the best self-score.
+- **`/lld|hld/interview/:problem`:**
+  - The brief: the interviewer's prompt, how the simulator works, a 45- or 60-minute length with each phase's budget, and the attempts so far.
+  - Then the phases against the clock, in a sidebar with each phase's time against its budget:
+    - Clarifying questions, answered from the script by keyword matching. Design choices get "that's your call"; other questions get "state an assumption". The full list is shown on request.
+    - HLD: requirements (checked against the reference requirements), the estimate (the calculator prefilled from the breakdown, values kept), APIs, the data model, the architecture in Mermaid (component palette, arrow helper, live preview), deep dives, failures, trade-offs.
+    - LLD: requirements, entities (checked against the reference class diagram), the class diagram in the lessons' notation with a live preview, the core flow in Java, edge cases and concurrency, follow-ups.
+    - Each phase has guidance, a draft saved as you type, hints one at a time, and the reference revealed on request.
+    - The self-evaluation: time per phase, the rubric, the checklist (its ticks are shared with the breakdown page), and HLD's follow-up questions. Finishing keeps the attempt and marks the problem Attempted.
+  - The clock stops while the page is hidden, closed or left; the learner resumes it.
+- **Where attempts are kept:** in the interviews document, with the account, in TheSWEguide's format, so its backups import.
+- **Shared parts:**
+  - the kits (phases, budgets, guidance, rubric, matcher, replies) are in `src/lib/interview/mock.ts`, and the flowchart helpers in `src/lib/diagrams/flowchart.ts`;
+  - the estimator can take stored values (`values`, `valuesChange`) and drop its frame (`bare`);
+  - a compact Mermaid preview says why a diagram can't be drawn, as TheSWEguide's did, instead of repeating its text.
+- **Found along the way:**
+  - The server leaves null members out of the documents it returns (Phase 0d). An unanswered question's `matched: null` came back missing, and the question was dropped at the next save. The model now reads a missing `matched` as no match.
+  - Five HLD clarifying questions didn't get their own answer when asked word for word. They are reworded (Facebook news feed, file upload service, Instagram, web crawler, YouTube), and a test now asks every question of every problem.
+  - Every section page exists now. The not-found page's "on its way" variant is gone, and the validator counts the section pages as pages.
+- **Tests:**
+  - the session model (clock, phases, drafts, finishing, reading stored attempts);
+  - the kits and helpers, and every written problem's script: complete, and each question answers itself;
+  - the simulator: the brief, questions, the clock and its pause, drafts, finishing;
+  - e2e: an HLD interview from the list to the attempts, kept across a reload and with the account.
 
 ## Phase 7: hosting and launch
 - **Vercel:** use the UI's Vercel project, or create one if it isn't on Vercel yet. Framework preset Angular, build `npm run build`, output `dist/browser`, production branch `main`.

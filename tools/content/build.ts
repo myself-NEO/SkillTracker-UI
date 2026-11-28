@@ -9,6 +9,7 @@
 //   public/content/dsa/practice.json                   the DSA coding-question list and cheat sheet index
 //   public/content/java/interview-questions.json       the Java question bank's titles by question id
 //   public/content/java/interview/<topic>.json         a topic of the Java question bank, rendered (and tricky.json)
+//   public/content/<lld|hld>/interview/<slug>.json      a problem's mock-interview script, parsed from its breakdown
 //   public/content/visualize.json                      the animation gallery's scenes
 //   public/search-index.json                          the ⌘K search index
 import { createHash } from 'node:crypto';
@@ -18,10 +19,20 @@ import { gzipSync } from 'node:zlib';
 import { CHEATSHEETS } from '@content/dsa/cheatsheets';
 import { LEETCODE_PROBLEMS } from '@content/dsa/problems';
 import { PRACTICE_TOPICS } from '@content/dsa/practiceTopics';
+import { parseInterviewScript } from '@content/hld/interview';
 import { INTERVIEW_TOPICS, parseInterviewTopic } from '@content/java/interview';
+import { parseLldInterviewScript } from '@content/lld/interview';
 import { TRICKY } from '@lib/interview/java-bank';
 import { hasProblemBody } from '@content/shared/loaders';
-import type { ContentIndex, IndexTopic, JavaBankQuestion, JavaQuestionIndex, TrackFile, VisualizeIndex } from '@lib/content/catalog';
+import type {
+  ContentIndex,
+  IndexTopic,
+  JavaBankQuestion,
+  JavaQuestionIndex,
+  MockScriptFile,
+  TrackFile,
+  VisualizeIndex,
+} from '@lib/content/catalog';
 import type { ContentDoc, ContentFragment } from '@lib/content/doc';
 import { topicStats } from '@lib/content/stats';
 import { findLesson, flattenLessons, TRACKS } from '@lib/content/tracks';
@@ -31,7 +42,7 @@ import { parseSceneParams } from '@lib/viz/schemas';
 import { countSlugs, writeManifest } from './manifest';
 import { highlightLines } from './highlight';
 import { CONTENT_DIR, OUT_DIR, rel, ROOT, SEARCH_INDEX_FILE } from './paths';
-import { renderDoc } from './pipeline';
+import { inline, renderDoc } from './pipeline';
 import { buildSearchIndex } from './search-index';
 
 const started = Date.now();
@@ -161,6 +172,21 @@ for (const topic of INTERVIEW_TOPICS) {
 }
 write(path.join(OUT_DIR, 'java', 'interview', 'tricky.json'), { topic: TRICKY, questions: tricky });
 write(path.join(OUT_DIR, 'java', 'interview-questions.json'), javaQuestions);
+
+// The LLD and HLD mock interviews: each written problem's interview script, parsed from its
+// breakdown (content/<lld|hld>/interview.ts) with its Markdown left for the browser to render as the
+// learner opens each part, and the checklist rendered for the checklist widget.
+for (const topic of ['lld', 'hld'] as const) {
+  for (const problem of TRACKS[topic].problems) {
+    if (!hasProblemBody(topic, problem.slug)) continue;
+    const markdown = read(topic, 'problems', `${problem.slug}.md`);
+    const script = topic === 'hld' ? parseInterviewScript(markdown) : parseLldInterviewScript(markdown);
+    write(path.join(OUT_DIR, topic, 'interview', `${problem.slug}.json`), {
+      script,
+      checklist: script.checklist.map(inline),
+    } satisfies MockScriptFile);
+  }
+}
 
 // The animation gallery: every scene with its default parameters and highlighted code.
 const visualize: VisualizeIndex = { scenes: [] };

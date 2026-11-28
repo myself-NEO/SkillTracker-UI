@@ -5,8 +5,17 @@ import type { Cheatsheet } from '@content/dsa/cheatsheets';
 import { findLesson, flattenLessons, type LessonLocation } from '@content/shared/curriculum';
 import type { ProblemMeta } from '@content/shared/types';
 import type { InterviewTopic } from '@content/java/interview';
-import type { ContentIndex, DsaPractice, JavaBankQuestion, JavaQuestionIndex, TrackFile, VisualizeIndex } from '@lib/content/catalog';
+import type {
+  ContentIndex,
+  DsaPractice,
+  JavaBankQuestion,
+  JavaQuestionIndex,
+  MockScriptFile,
+  TrackFile,
+  VisualizeIndex,
+} from '@lib/content/catalog';
 import type { ContentDoc } from '@lib/content/doc';
+import type { MockTopic } from '@lib/interview/mock';
 import { practiceCopy } from '@lib/content/practice';
 import { RESERVED_SEGMENTS } from '@lib/routes';
 import { TOPICS, type TopicId } from '@lib/topics';
@@ -110,6 +119,30 @@ export const javaBankTitleResolver: ResolveFn<string> = async (route) => {
   }
 };
 
+export interface MockInterviewData {
+  topic: MockTopic;
+  track: TrackFile;
+  problem: ProblemMeta;
+  /** null while the problem's breakdown, which the interview is built from, isn't written. */
+  script: MockScriptFile | null;
+}
+
+/** /lld/interview/:problem and /hld/interview/:problem: a practice problem as a mock interview. */
+export const mockInterviewResolver: ResolveFn<PageResult<MockInterviewData>> = async (route) => {
+  const content = inject(ContentService);
+  const topic = route.data['topic'] as MockTopic;
+  const slug = route.paramMap.get('problem') ?? '';
+  try {
+    const track = await content.track(topic);
+    const problem = track.problems.find((candidate) => candidate.slug === slug);
+    if (!problem) return missing;
+    const script = track.writtenProblems.includes(slug) ? await content.mockScript(topic, slug) : null;
+    return { status: 'ok', value: { topic, track, problem, script } };
+  } catch (error) {
+    return failure(error);
+  }
+};
+
 /** /:topic/:lesson */
 export const lessonResolver: ResolveFn<PageResult<LessonData>> = async (route) => {
   const content = inject(ContentService);
@@ -160,9 +193,9 @@ export const cheatsheetResolver: ResolveFn<PageResult<CheatsheetData>> = async (
 };
 
 /**
- * Lessons live at /:topic/:lesson, so that route must not take the topic's section pages
- * (/java/notebook, /dsa/problems, …): until a section is ported, its URL falls through to the
- * not-found page, which says it's on its way.
+ * Lessons live at /:topic/:lesson, so that route must not take the names of the topics' section
+ * pages (/java/notebook, /dsa/problems, …): a section a topic doesn't have (/dsa/interview) is a
+ * page that doesn't exist, not a lesson.
  */
 export const lessonSlugMatch: CanMatchFn = (_route, segments) =>
   !(RESERVED_SEGMENTS as readonly string[]).includes(segments[0]?.path ?? '');
@@ -187,6 +220,18 @@ export const problemTitleResolver: ResolveFn<string> = async (route) => {
     const track = await inject(ContentService).track(topic);
     const problem = track.problems.find((candidate) => candidate.slug === route.paramMap.get('problem'));
     return problem ? `${problem.title} · ${track.shortTitle}` : 'Page not found';
+  } catch {
+    return track404Title(topic);
+  }
+};
+
+/** "Mock interview: URL Shortener · HLD" */
+export const mockInterviewTitleResolver: ResolveFn<string> = async (route) => {
+  const topic = route.data['topic'] as TopicId;
+  try {
+    const track = await inject(ContentService).track(topic);
+    const problem = track.problems.find((candidate) => candidate.slug === route.paramMap.get('problem'));
+    return problem ? `Mock interview: ${problem.title} · ${track.shortTitle}` : 'Page not found';
   } catch {
     return track404Title(topic);
   }

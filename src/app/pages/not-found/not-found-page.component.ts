@@ -1,7 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { isTopicId, TOPICS } from '@lib/topics';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { TOPICS } from '@lib/topics';
 import { TopicGlyphComponent } from '../../ui/topic-glyph.component';
 
 /** "This page doesn't exist", with the topics to go to instead. Ported from TheSWEguide's not-found page. */
@@ -11,20 +10,11 @@ import { TopicGlyphComponent } from '../../ui/topic-glyph.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <main id="main-content" class="mx-auto w-full max-w-3xl px-4 py-16 sm:px-6 lg:py-24">
-      @if (comingSoon()) {
-        <p class="font-mono text-sm font-semibold tracking-[0.18em] text-muted uppercase">Coming soon</p>
-        <h1 class="mt-3 font-display text-4xl font-bold tracking-tight sm:text-5xl">This page is on its way</h1>
-        <p class="mt-4 text-lg leading-8 text-muted">
-          The notebooks, progress pages, interview practice and DSA's coding questions are being moved over from
-          TheSWEguide, and this page isn’t here yet. Lessons, practice problems and cheat sheets are.
-        </p>
-      } @else {
-        <p class="font-mono text-sm font-semibold tracking-[0.18em] text-muted">404</p>
-        <h1 class="mt-3 font-display text-4xl font-bold tracking-tight sm:text-5xl">This page doesn’t exist</h1>
-        <p class="mt-4 text-lg leading-8 text-muted">
-          The link may be out of date, or the page may have moved. Pick a topic to find what you were looking for.
-        </p>
-      }
+      <p class="font-mono text-sm font-semibold tracking-[0.18em] text-muted">404</p>
+      <h1 class="mt-3 font-display text-4xl font-bold tracking-tight sm:text-5xl">This page doesn’t exist</h1>
+      <p class="mt-4 text-lg leading-8 text-muted">
+        The link may be out of date, or the page may have moved. Pick a topic to find what you were looking for.
+      </p>
       <ul class="mt-10 grid gap-3 sm:grid-cols-2">
         @for (topic of topics; track topic.id) {
           <li [attr.data-track]="topic.id">
@@ -50,8 +40,6 @@ import { TopicGlyphComponent } from '../../ui/topic-glyph.component';
   `,
 })
 export class NotFoundComponent {
-  /** A page of a topic that the port from TheSWEguide hasn't reached yet, rather than a wrong link. */
-  readonly comingSoon = input(false);
   protected readonly topics = TOPICS;
 }
 
@@ -60,13 +48,6 @@ export class NotFoundComponent {
   selector: 'app-not-found-page',
   imports: [NotFoundComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<app-not-found [comingSoon]="comingSoon()" />`,
+  template: `<app-not-found />`,
 })
-export class NotFoundPageComponent {
-  private readonly url = toSignal(inject(ActivatedRoute).url, { requireSync: true });
-  /**
-   * A section page under a topic (/java/notebook, /dsa/problems, …) that isn't ported yet
-   * (docs/plan.md, Phases 4–6). Once every page exists this goes, and such URLs are plain 404s.
-   */
-  protected readonly comingSoon = computed(() => isTopicId(this.url()[0]?.path ?? '') && this.url().length > 1);
-}
+export class NotFoundPageComponent {}

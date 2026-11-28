@@ -39,15 +39,14 @@ describe('checkFence', () => {
 
 describe('checkLink', () => {
   const routes: SiteRoutes = {
-    pages: new Set(['/', '/java', '/java/records', '/java/problems/lru-cache', '/hld/cdn']),
-    planned: new Set(['/java/notebook']),
+    pages: new Set(['/', '/java', '/java/records', '/java/problems/lru-cache', '/java/notebook', '/hld/cdn']),
   };
 
   it('resolves lesson:, problem: and absolute links', () => {
     expect(checkLink('lesson:records', '/java', routes)).toBe('ok');
     expect(checkLink('problem:lru-cache', '/java', routes)).toBe('ok');
     expect(checkLink('/hld/cdn#caching', '/java', routes)).toBe('ok');
-    expect(checkLink('/java/notebook', '/java', routes)).toBe('planned');
+    expect(checkLink('/java/notebook', '/java', routes)).toBe('ok');
   });
 
   it('reports links to pages that do not exist, and relative links', () => {

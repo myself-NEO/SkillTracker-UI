@@ -3,9 +3,10 @@ import type { LeetCodeProblem } from '@content/dsa/problems';
 import type { PracticeTopic } from '@content/dsa/practiceTopics';
 import type { InterviewTopic, QuestionKind } from '@content/java/interview';
 import type { Level, Track } from '@content/shared/types';
+import type { BaseScript } from '@content/system-design/interviewScript';
 import type { Topic, TopicId } from '@lib/topics';
 import type { SceneCode, VizMode } from '@lib/viz/types';
-import type { ContentFragment } from './doc';
+import type { ContentFragment, InlineText } from './doc';
 import type { topicStats } from './stats';
 
 // Shapes of the catalog files the content build writes (tools/content/build.ts) and the app reads.
@@ -69,6 +70,16 @@ export interface JavaBankQuestion {
 export interface JavaBankFile {
   topic: InterviewTopic;
   questions: JavaBankQuestion[];
+}
+
+/**
+ * public/content/<lld|hld>/interview/<slug>.json: what a problem's mock interview is built from, its
+ * breakdown parsed into an interview script (content/hld/interview.ts, content/lld/interview.ts).
+ */
+export interface MockScriptFile<S extends BaseScript = BaseScript> {
+  script: S;
+  /** The script's checklist items, rendered for the checklist widget. */
+  checklist: InlineText[];
 }
 
 /** public/content/dsa/practice.json */

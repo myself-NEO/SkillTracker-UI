@@ -76,7 +76,12 @@
     @case ('error') {
       <div class="px-4 py-3" role="alert">
         <p class="mb-2 text-xs font-semibold text-warning">This diagram couldn’t be drawn. Its text is shown instead.</p>
-        <pre class="overflow-x-auto font-mono text-[13px] leading-relaxed text-fg-soft" tabindex="0">{{ trimmed() }}</pre>
+        @if (compact()) {
+          <!-- A preview beside its source (an editor): why, rather than the text again. -->
+          <p class="mb-2 text-xs [overflow-wrap:anywhere] text-muted">{{ errorLine() }}</p>
+        } @else {
+          <pre class="overflow-x-auto font-mono text-[13px] leading-relaxed text-fg-soft" tabindex="0">{{ trimmed() }}</pre>
+        }
       </div>
     }
   }
