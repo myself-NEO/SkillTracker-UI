@@ -7,7 +7,8 @@
 //   public/content/<topic>/problems/<slug>.json         a problem breakdown (ContentDoc)
 //   public/content/dsa/cheatsheets/<slug>.json          a DSA cheat sheet (ContentDoc)
 //   public/content/dsa/practice.json                   the DSA coding-question list and cheat sheet index
-//   public/content/java/interview-questions.json       the Java question bank's titles by question id (notebook)
+//   public/content/java/interview-questions.json       the Java question bank's titles by question id
+//   public/content/java/interview/<topic>.json         a topic of the Java question bank, rendered (and tricky.json)
 //   public/content/visualize.json                      the animation gallery's scenes
 //   public/search-index.json                          the ⌘K search index
 import { createHash } from 'node:crypto';
@@ -18,9 +19,10 @@ import { CHEATSHEETS } from '@content/dsa/cheatsheets';
 import { LEETCODE_PROBLEMS } from '@content/dsa/problems';
 import { PRACTICE_TOPICS } from '@content/dsa/practiceTopics';
 import { INTERVIEW_TOPICS, parseInterviewTopic } from '@content/java/interview';
+import { TRICKY } from '@lib/interview/java-bank';
 import { hasProblemBody } from '@content/shared/loaders';
-import type { ContentIndex, IndexTopic, JavaQuestionIndex, TrackFile, VisualizeIndex } from '@lib/content/catalog';
-import type { ContentDoc } from '@lib/content/doc';
+import type { ContentIndex, IndexTopic, JavaBankQuestion, JavaQuestionIndex, TrackFile, VisualizeIndex } from '@lib/content/catalog';
+import type { ContentDoc, ContentFragment } from '@lib/content/doc';
 import { topicStats } from '@lib/content/stats';
 import { findLesson, flattenLessons, TRACKS } from '@lib/content/tracks';
 import { TOPIC_IDS, TOPICS } from '@lib/topics';
@@ -117,13 +119,47 @@ for (const sheet of CHEATSHEETS) {
 }
 write(path.join(OUT_DIR, 'dsa', 'practice.json'), { topics: PRACTICE_TOPICS, problems: LEETCODE_PROBLEMS, cheatsheets: CHEATSHEETS });
 
-// The Java question bank's titles by id: questions flagged for revision are named in the notebook.
+// The Java question bank: each topic's questions with their Markdown rendered like the lessons
+// (highlighted code), a file of the tricky ones, and every question's title by id (the bank's index
+// counts them; the notebook names questions flagged for revision).
+const java = TRACKS.java;
+const fragment = async (markdown: string): Promise<ContentFragment> => {
+  const { html, widgets } = await renderDoc(markdown, { basePath: java.basePath, javaVersion: java.javaVersion });
+  return { html, widgets };
+};
 const javaQuestions: JavaQuestionIndex = {};
+const tricky: JavaBankQuestion[] = [];
 for (const topic of INTERVIEW_TOPICS) {
-  for (const question of parseInterviewTopic(topic.id, read('java', 'interview', `${topic.id}.md`))) {
-    javaQuestions[question.id] = { title: question.title, topic: question.topic };
+  const questions = parseInterviewTopic(topic.id, read('java', 'interview', `${topic.id}.md`), (message) => {
+    throw new Error(`content/java/interview/${topic.id}.md: ${message}`);
+  });
+  const rendered: JavaBankQuestion[] = [];
+  for (const question of questions) {
+    const lessons = question.lessons.flatMap((slug) => {
+      const lesson = findLesson(java, slug)?.lesson;
+      return lesson ? [{ slug: lesson.slug, title: lesson.title }] : [];
+    });
+    const entry: JavaBankQuestion = {
+      id: question.id,
+      topic: question.topic,
+      title: question.title,
+      level: question.level,
+      kind: question.kind,
+      tricky: question.tricky,
+      lessons,
+      ...(question.body && { body: await fragment(question.body) }),
+      hints: await Promise.all(question.hints.map(fragment)),
+      answer: await fragment(question.answer),
+      ...(question.whyNot && { whyNot: await fragment(question.whyNot) }),
+      ...(question.followUp && { followUp: await fragment(question.followUp) }),
+    };
+    rendered.push(entry);
+    if (question.tricky) tricky.push(entry);
+    javaQuestions[question.id] = { title: question.title, topic: question.topic, ...(question.tricky && { tricky: true as const }) };
   }
+  write(path.join(OUT_DIR, 'java', 'interview', `${topic.id}.json`), { topic, questions: rendered });
 }
+write(path.join(OUT_DIR, 'java', 'interview', 'tricky.json'), { topic: TRICKY, questions: tricky });
 write(path.join(OUT_DIR, 'java', 'interview-questions.json'), javaQuestions);
 
 // The animation gallery: every scene with its default parameters and highlighted code.

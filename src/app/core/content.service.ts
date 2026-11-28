@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import type { ContentIndex, DsaPractice, JavaQuestionIndex, TrackFile, VisualizeIndex } from '@lib/content/catalog';
+import type { ContentIndex, DsaPractice, JavaBankFile, JavaQuestionIndex, TrackFile, VisualizeIndex } from '@lib/content/catalog';
 import type { ContentDoc } from '@lib/content/doc';
 import type { TopicId } from '@lib/topics';
 
@@ -42,6 +42,11 @@ export class ContentService {
   /** The Java question bank's titles by question id (for the notebook). */
   javaQuestions(): Promise<JavaQuestionIndex> {
     return this.cached(this.catalog, '/content/java/interview-questions.json');
+  }
+
+  /** One topic of the Java question bank (or "tricky"), rendered. */
+  javaBank(topic: string): Promise<JavaBankFile> {
+    return this.cached(this.catalog, `/content/java/interview/${encodeURIComponent(topic)}.json`);
   }
 
   lesson(topic: TopicId, slug: string): Promise<ContentDoc> {

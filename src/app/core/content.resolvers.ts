@@ -4,7 +4,8 @@ import { CanMatchFn, ResolveFn } from '@angular/router';
 import type { Cheatsheet } from '@content/dsa/cheatsheets';
 import { findLesson, flattenLessons, type LessonLocation } from '@content/shared/curriculum';
 import type { ProblemMeta } from '@content/shared/types';
-import type { ContentIndex, DsaPractice, JavaQuestionIndex, TrackFile, VisualizeIndex } from '@lib/content/catalog';
+import type { InterviewTopic } from '@content/java/interview';
+import type { ContentIndex, DsaPractice, JavaBankQuestion, JavaQuestionIndex, TrackFile, VisualizeIndex } from '@lib/content/catalog';
 import type { ContentDoc } from '@lib/content/doc';
 import { practiceCopy } from '@lib/content/practice';
 import { RESERVED_SEGMENTS } from '@lib/routes';
@@ -83,6 +84,31 @@ const missing = { status: 'missing' } as const;
 /** A download that failed because the file isn't there is a missing page; anything else is an error. */
 const failure = (error: unknown) =>
   error instanceof HttpErrorResponse && error.status === 404 ? missing : ({ status: 'error' } as const);
+
+export interface JavaBankData {
+  topic: InterviewTopic;
+  questions: JavaBankQuestion[];
+}
+
+/** /java/interview/:bankTopic: one topic of the question bank, or its tricky questions ("tricky"). */
+export const javaBankResolver: ResolveFn<PageResult<JavaBankData>> = async (route) => {
+  try {
+    const { topic, questions } = await inject(ContentService).javaBank(route.paramMap.get('bankTopic') ?? '');
+    return { status: 'ok', value: { topic, questions } };
+  } catch (error) {
+    return failure(error);
+  }
+};
+
+/** "Collections · Java interview questions" */
+export const javaBankTitleResolver: ResolveFn<string> = async (route) => {
+  try {
+    const { topic } = await inject(ContentService).javaBank(route.paramMap.get('bankTopic') ?? '');
+    return `${topic.title} · Java interview questions`;
+  } catch (error) {
+    return failure(error).status === 'missing' ? 'Page not found' : 'Java interview questions';
+  }
+};
 
 /** /:topic/:lesson */
 export const lessonResolver: ResolveFn<PageResult<LessonData>> = async (route) => {

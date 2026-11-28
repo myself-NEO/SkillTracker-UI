@@ -10,6 +10,8 @@ import {
   codingTopicTitleResolver,
   contentIndexResolver,
   dsaPracticeResolver,
+  javaBankResolver,
+  javaBankTitleResolver,
   javaQuestionsResolver,
   lessonResolver,
   lessonSlugMatch,
@@ -45,6 +47,9 @@ const notebookPage = () => import('./pages/notebook/notebook-page.component').th
 const progressPage = () => import('./pages/progress/progress-page.component').then((m) => m.ProgressPageComponent);
 const codingPage = () => import('./pages/dsa/coding-questions-page.component').then((m) => m.CodingQuestionsPageComponent);
 const dsaNotesPage = () => import('./pages/dsa/dsa-notes-page.component').then((m) => m.DsaNotesPageComponent);
+const javaBankPage = () => import('./pages/interview/java-bank-page.component').then((m) => m.JavaBankPageComponent);
+const javaBankTopicPage = () =>
+  import('./pages/interview/java-bank-topic-page.component').then((m) => m.JavaBankTopicPageComponent);
 
 /**
  * One topic's pages, e.g. /java. The topic is in the route data; its curriculum is resolved once for
@@ -80,6 +85,22 @@ const topicRoute = (topic: TopicId): Route => ({
           },
         ]),
     ...(topic === 'hld' ? [{ path: 'estimator', title: 'Capacity estimator · HLD', loadComponent: estimatorPage }] : []),
+    ...(topic === 'java'
+      ? [
+          {
+            path: 'interview',
+            title: 'Java interview questions',
+            resolve: { questions: javaQuestionsResolver },
+            loadComponent: javaBankPage,
+          },
+          {
+            path: 'interview/:bankTopic',
+            title: javaBankTitleResolver,
+            resolve: { page: javaBankResolver },
+            loadComponent: javaBankTopicPage,
+          },
+        ]
+      : []),
     {
       path: 'progress',
       title: `Your ${TOPICS.find((info) => info.id === topic)!.shortTitle} progress`,

@@ -7,6 +7,7 @@ import { NotebookStore } from '../../core/notebook.store';
 import { ProgressStore } from '../../core/progress.store';
 import { BookmarkIconComponent, SearchIconComponent } from '../../ui/icons';
 import { AppHrefDirective } from '../../ui/app-href.directive';
+import { InlineCodeComponent } from '../../ui/inline-code.component';
 import {
   BUTTON,
   DiagramCardComponent,
@@ -42,6 +43,7 @@ const REVISION_KIND: Record<RevisionItem['kind'], { label: string; classes: stri
   selector: 'app-notebook',
   imports: [
     AppHrefDirective,
+    InlineCodeComponent,
     BookmarkIconComponent,
     SearchIconComponent,
     TopicSelectComponent,

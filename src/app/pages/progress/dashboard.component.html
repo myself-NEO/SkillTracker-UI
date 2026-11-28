@@ -77,7 +77,7 @@
             <ul class="space-y-2.5">
               @for (item of due().slice(0, 6); track item.key) {
                 <li class="text-sm">
-                  <span class="line-clamp-2 block text-fg">{{ item.title }}</span>
+                  <span class="line-clamp-2 block text-fg" appInlineCode [text]="item.title"></span>
                   <span class="text-xs text-muted">{{ item.context }}</span>
                 </li>
               }

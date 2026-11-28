@@ -74,3 +74,18 @@ export interface ContentDoc {
   /** Interview-question reveal blocks by their id (`q-<hash of the title>`), for notebook bookmarks. */
   questions: Record<string, { title: string; body: string }>;
 }
+
+/** A piece of Markdown outside a page body (e.g. an interview answer), rendered at build time like the bodies. */
+export interface ContentFragment {
+  html: string;
+  widgets: Widget[];
+}
+
+/** A fragment as a ContentDoc, to show it with the body renderer (LessonBodyComponent). */
+export const fragmentDoc = (fragment: ContentFragment): ContentDoc => ({
+  v: CONTENT_DOC_VERSION,
+  toc: [],
+  html: fragment.html,
+  widgets: fragment.widgets,
+  questions: {},
+});

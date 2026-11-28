@@ -362,6 +362,34 @@ Split into three:
   - `V3__drop_dashboard_roadmaps.sql`, which drops 7 tables.
   - `users` and `mock_interviews` stay.
 
+6a is split in three, each with its own review:
+- **6a.1:** the Java question bank (`/java/interview`).
+- **6a.2:** the timed LLD/HLD mock interviews (`/lld|hld/interview`), with their kits, rubric, editors and attempt history.
+- **6a.3:** the `/mock-interview` hub (practise and schedule), and the backend's `/api/interviews`.
+
+**Phase 6a.1 (done 2026-11-28, in review): the Java question bank.**
+- **Content build:**
+  - Each bank topic is written as `public/content/java/interview/<topic>.json`, with its questions' Markdown (question detail, hints, answer, "why other answers fall short", follow-up) rendered like the lessons: highlighted code with copy buttons.
+  - `tricky.json` holds the 71 tricky questions of every topic. The 14 topic files and `tricky.json` come to 175 KB gzipped, about 12 KB per topic.
+  - Each file carries its topic's title and description, so the route resolvers don't ship the topic list in the first download.
+  - `interview-questions.json` marks the tricky questions, for the index's counts.
+- **`/java/interview`:** the bank's 14 topics and its tricky questions as cards, with how much is practised (TheSWEguide's BankProgress).
+- **`/java/interview/:bankTopic`:**
+  - a topic's questions, with chips to switch topic;
+  - each question opens to practise: write an answer (saved as you type), open hints one at a time, reveal the model answer, rate yourself;
+  - a "Missed it" rating puts the question on the revision list; there's also a bookmark and a "Mark for revision" flag;
+  - "Learn it" links to the lessons that teach it;
+  - a `#q-…` link from search or the notebook opens its question.
+- **Where practice is kept:** in the notebook (`java:<question id>`), so it reaches the account. The Java notebook and progress page count and name these questions.
+- **Shared parts:**
+  - question parts reuse the lesson body renderer (`kind: 'interview'`);
+  - `DebouncedSave` (`notebook/debounced-save.ts`) saves drafts and notes when typing pauses, and at once when leaving or closing the page;
+  - titles with `inline code` show it as code, here and in the notebook and progress pages (TheSWEguide showed the backticks).
+- **Tests:**
+  - the bank's helpers;
+  - a question's practice (draft, hints, answer, rating, bookmark);
+  - e2e: practising a question from a `#q-…` link, a miss reaching the notebook's revision list, and the account.
+
 ## Phase 7: hosting and launch
 - **Vercel:** use the UI's Vercel project, or create one if it isn't on Vercel yet. Framework preset Angular, build `npm run build`, output `dist/browser`, production branch `main`.
   - The stable branch URL `…-git-dev-….vercel.app` serves reviews.

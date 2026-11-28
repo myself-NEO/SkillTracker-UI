@@ -79,9 +79,9 @@
                   }}</span>
                   <p class="mt-1.5 font-medium text-fg">
                     @if (item.href; as href) {
-                      <a [appHref]="href" class="hover:text-accent">{{ item.title }}</a>
+                      <a [appHref]="href" class="hover:text-accent" appInlineCode [text]="item.title"></a>
                     } @else {
-                      {{ item.title }}
+                      <span appInlineCode [text]="item.title"></span>
                     }
                   </p>
                   <p class="mt-0.5 text-xs text-muted">
@@ -122,7 +122,7 @@
               <div class="flex min-w-0 items-start gap-3">
                 <svg appBookmarkIcon [filled]="true" class="mt-0.5 size-4 shrink-0 text-accent"></svg>
                 <div class="min-w-0">
-                  <a [appHref]="savedHref(item)" class="font-medium text-fg hover:text-accent">{{ item.title }}</a>
+                  <a [appHref]="savedHref(item)" class="font-medium text-fg hover:text-accent" appInlineCode [text]="item.title"></a>
                   <p class="mt-0.5 text-xs text-muted">
                     {{ item.kind === 'section' ? 'Section of “' + item.context + '”' : item.context }} · saved {{ date(item.at) }}
                   </p>
