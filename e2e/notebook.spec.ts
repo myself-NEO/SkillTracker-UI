@@ -1,9 +1,10 @@
 import { writeFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { resetNotebook, serverNotebook, signInWithToken, testAccountToken } from './backend';
+import { clearProgress, resetNotebook, serverNotebook, serverProgress, signInWithToken, testAccountToken } from './backend';
 
-// The revision notebook: its tools on lesson pages, the notebook page, and importing a backup.
-// Each project's test account gets its notebook emptied first, so these run one after another.
+// The revision notebook (its tools on lesson pages, the notebook page, importing a backup) and DSA's
+// coding questions, which keep their flags and notes in the notebook too. Each test empties the
+// project's test account's notebook first, so these run one after another.
 
 test.describe('the notebook (needs the local backend)', () => {
   test.describe.configure({ mode: 'serial' });
@@ -88,5 +89,29 @@ test.describe('the notebook (needs the local backend)', () => {
     await expect(panel.getByText('Strategy swaps the algorithm; State swaps behaviour as the object changes.')).toBeVisible();
 
     await expect.poll(async () => Object.keys((await serverNotebook(token)).notes ?? {}), { timeout: 15_000 }).toEqual(['imported-1']);
+  });
+
+  test("a coding question's status, flag and note are kept, and the note is in DSA's interview notes", async ({ page }) => {
+    await resetNotebook(token);
+    await clearProgress(token, { problems: { 'dsa:lc-1': null }, problemsAt: { 'dsa:lc-1': null } });
+    await page.goto('/dsa/problems/arrays-hashing');
+
+    const row = page.locator('#lc-1');
+    await row.getByRole('combobox', { name: 'Status of 1. Two Sum' }).selectOption('completed');
+    await row.getByRole('button', { name: /Revisit/ }).click();
+    await expect(row.getByRole('button', { name: /Revisit/ })).toHaveAttribute('aria-pressed', 'true');
+    await row.getByRole('button', { name: /Notes/ }).click();
+    await row.getByRole('textbox', { name: /My notes/ }).fill('One pass with a hash map: value → index.');
+    await expect(row.getByText('Saved', { exact: true })).toBeVisible();
+    await expect(page.locator('header').getByText('1', { exact: true })).toBeVisible(); // "1 / 156 solved"
+
+    await page.getByRole('navigation', { name: 'DSA pages' }).getByRole('link', { name: 'Interview notes' }).click();
+    const note = page.locator('article[data-note="problem"]');
+    await expect(note.getByRole('link', { name: /1\. Two Sum/ })).toHaveAttribute('href', 'https://leetcode.com/problems/two-sum/');
+    await expect(note.getByText('Solved')).toBeVisible();
+    await expect(note.getByText('One pass with a hash map: value → index.')).toBeVisible();
+
+    await expect.poll(async () => (await serverProgress(token)).problems?.['dsa:lc-1'], { timeout: 15_000 }).toBe('completed');
+    await expect.poll(async () => Object.keys((await serverNotebook(token)).revise ?? {}), { timeout: 15_000 }).toEqual(['dsa:lc-1']);
   });
 });

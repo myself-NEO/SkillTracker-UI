@@ -166,6 +166,17 @@ export const problemTitleResolver: ResolveFn<string> = async (route) => {
   }
 };
 
+/** "Arrays & Hashing · Coding questions · DSA" */
+export const codingTopicTitleResolver: ResolveFn<string> = async (route) => {
+  try {
+    const { topics } = await inject(ContentService).dsaPractice();
+    const topic = topics.find((candidate) => candidate.id === route.paramMap.get('practiceTopic'));
+    return topic ? `${topic.title} · Coding questions · DSA` : 'Page not found';
+  } catch {
+    return 'Coding questions · DSA';
+  }
+};
+
 export const libraryTitleResolver: ResolveFn<string> = async (route) => {
   const topic = route.data['topic'] as TopicId;
   try {

@@ -4,7 +4,7 @@ import type { NotebookSettings } from '@lib/notebook/settings';
 import type { TopicIndex } from '@lib/notebook/revision';
 import type { Note, NoteKind, SavedItem, Snippet } from '@lib/progress/notebook';
 import { NotebookStore } from '../../core/notebook.store';
-import { NoteIconComponent } from '../../notebook/icons';
+import { NoteIconComponent } from '../../ui/icons';
 import { AppHrefDirective } from '../../ui/app-href.directive';
 import { MarkdownComponent } from '../../ui/markdown.component';
 import { MermaidDiagramComponent } from '../article/mermaid-diagram.component';

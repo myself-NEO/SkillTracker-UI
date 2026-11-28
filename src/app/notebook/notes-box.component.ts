@@ -1,24 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, linkedSignal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, linkedSignal, untracked } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { TrackId } from '@content/shared/types';
-import { lessonNote, problemNote } from '@lib/progress/notebook';
+import { lessonNote, type NotebookState, problemNote } from '@lib/progress/notebook';
 import { NotebookStore } from '../core/notebook.store';
-import { StateSync } from '../core/state-sync.service';
-import { NoteIconComponent } from './icons';
-
-/** Typing pauses this long before the note is saved. */
-const SAVE_DELAY_MS = 600;
-
-interface PendingSave {
-  key: string;
-  text: string;
-  save: () => void;
-}
+import { NoteIconComponent } from '../ui/icons';
+import { NoteAutosave } from './note-autosave';
 
 /**
  * A personal note on a lesson or problem, saved to the notebook as the learner types (TheSWEguide's
  * NotesBox). A note still waiting to be saved is saved when the learner moves to another page or
- * closes this one.
+ * closes this one (NoteAutosave).
  */
 @Component({
   selector: 'app-notes-box',
@@ -71,11 +62,7 @@ export class NotesBoxComponent {
 
   private readonly pageKey = computed(() => `${this.track()}:${this.kind()}:${this.slug()}`);
   protected readonly id = computed(() => `${this.kind()}-note-${this.slug()}`);
-  private readonly existing = computed(() =>
-    this.kind() === 'lesson'
-      ? lessonNote(this.store.notebook(), this.track(), this.slug())
-      : problemNote(this.store.notebook(), this.track(), this.slug()),
-  );
+  private readonly existing = computed(() => this.find(this.store.notebook(), this.track(), this.kind(), this.slug()));
 
   /** What the learner typed on this page; until they type, the box shows the saved note. */
   private readonly draft = linkedSignal<string, string | null>({ source: this.pageKey, computation: () => null });
@@ -94,24 +81,20 @@ export class NotesBoxComponent {
     }
   });
 
-  private pending: PendingSave | null = null;
-  private timer: ReturnType<typeof setTimeout> | undefined;
+  private readonly autosave = new NoteAutosave();
 
   constructor() {
     // Moving to another lesson reuses this box: save what was typed on the previous one first.
     effect(() => {
       const key = this.pageKey();
       untracked(() => {
-        if (this.pending && this.pending.key !== key) this.flush();
+        if (this.autosave.pendingKey && this.autosave.pendingKey !== key) this.autosave.flush();
       });
     });
-    // Closing, reloading or hiding the page saves a note still waiting for the pause in typing, just
-    // before StateSync's last save, so it goes out with it.
-    const removeExitHook = inject(StateSync).beforeExit(() => this.flush());
-    inject(DestroyRef).onDestroy(() => {
-      removeExitHook();
-      this.flush();
-    });
+  }
+
+  private find(notebook: NotebookState, track: TrackId, kind: 'lesson' | 'problem', slug: string) {
+    return kind === 'lesson' ? lessonNote(notebook, track, slug) : problemNote(notebook, track, slug);
   }
 
   protected onInput(value: string) {
@@ -121,40 +104,20 @@ export class NotesBoxComponent {
     const track = this.track();
     const kind = this.kind();
     const slug = this.slug();
-    const title = this.title();
-    const topic = this.topic();
     const key = this.pageKey();
-    this.pending = {
+    this.autosave.queue(
       key,
-      text: value,
-      save: () => {
-        const notebook = this.store.notebook();
-        const id = (kind === 'lesson' ? lessonNote(notebook, track, slug) : problemNote(notebook, track, slug))?.id;
-        if (value.trim() === '') {
-          if (id) this.store.deleteNote(id);
-        } else {
-          this.store.saveNote({
-            id,
-            track,
-            title: kind === 'lesson' ? title : `${title} — my notes`,
-            body: value,
-            topic,
-            ...(kind === 'lesson' ? { lesson: slug } : { problem: slug }),
-          });
-        }
+      value,
+      {
+        track,
+        title: kind === 'lesson' ? this.title() : `${this.title()} — my notes`,
+        topic: this.topic(),
+        ...(kind === 'lesson' ? { lesson: slug } : { problem: slug }),
       },
-    };
-    clearTimeout(this.timer);
-    this.timer = setTimeout(() => {
-      this.flush();
-      if (key === this.pageKey()) this.status.set('saved');
-    }, SAVE_DELAY_MS);
-  }
-
-  private flush() {
-    clearTimeout(this.timer);
-    const pending = this.pending;
-    this.pending = null;
-    pending?.save();
+      (notebook) => this.find(notebook, track, kind, slug),
+      () => {
+        if (key === this.pageKey()) this.status.set('saved');
+      },
+    );
   }
 }

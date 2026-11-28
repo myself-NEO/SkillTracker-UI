@@ -5,7 +5,7 @@ import type { SavedItem } from '@lib/progress/notebook';
 import { InterviewsStore } from '../../core/interviews.store';
 import { NotebookStore } from '../../core/notebook.store';
 import { ProgressStore } from '../../core/progress.store';
-import { BookmarkIconComponent, SearchIconComponent } from '../../notebook/icons';
+import { BookmarkIconComponent, SearchIconComponent } from '../../ui/icons';
 import { AppHrefDirective } from '../../ui/app-href.directive';
 import {
   BUTTON,

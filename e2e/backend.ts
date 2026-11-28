@@ -83,18 +83,23 @@ export async function signInWithToken(page: Page, value: string) {
   await page.addInitScript((saved) => localStorage.setItem('sde_prep_token', saved), value);
 }
 
+/** Sets progress in the account directly (a merge patch), e.g. a lesson completed. */
+export async function setProgress(token: string, patch: Record<string, Record<string, unknown>>) {
+  await clearProgress(token, patch);
+}
+
 /**
  * Removes progress a test is about to create from the account, so the test starts from the same
  * place every run (a merge patch: each key set to null is removed).
  */
-export async function clearProgress(token: string, patch: Record<string, Record<string, null>>) {
+export async function clearProgress(token: string, patch: Record<string, Record<string, unknown>>) {
   const api = await request.newContext();
   try {
     const response = await api.patch(`${API}/api/state/progress`, {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/merge-patch+json' },
       data: patch,
     });
-    if (!response.ok()) throw new Error(`Could not reset the e2e account's progress: ${response.status()}`);
+    if (!response.ok()) throw new Error(`Could not change the e2e account's progress: ${response.status()}`);
   } finally {
     await api.dispose();
   }

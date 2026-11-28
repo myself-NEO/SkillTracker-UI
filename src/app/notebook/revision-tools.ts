@@ -3,7 +3,7 @@ import type { TrackId } from '@content/shared/types';
 import { isSaved, itemKey, savedKey } from '@lib/progress/notebook';
 import { NotebookStore } from '../core/notebook.store';
 import type { BodyPage } from '../widgets/page';
-import { BookmarkIconComponent, FlagIconComponent } from './icons';
+import { BookmarkIconComponent, FlagIconComponent } from '../ui/icons';
 import { ToggleChipComponent } from './toggle-chip.component';
 
 // The revision tools on lesson and problem pages of topics with a notebook (Java, LLD, HLD),

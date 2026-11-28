@@ -7,6 +7,7 @@ import { LoginComponent } from './components/login/login.component';
 import {
   cheatsheetResolver,
   cheatsheetTitleResolver,
+  codingTopicTitleResolver,
   contentIndexResolver,
   dsaPracticeResolver,
   javaQuestionsResolver,
@@ -41,11 +42,15 @@ const libraryPage = () =>
 const cheatsheetPage = () => import('./pages/cheatsheet/cheatsheet-page.component').then((m) => m.CheatsheetPageComponent);
 const estimatorPage = () => import('./pages/estimator/estimator-page.component').then((m) => m.EstimatorPageComponent);
 const notebookPage = () => import('./pages/notebook/notebook-page.component').then((m) => m.NotebookPageComponent);
+const progressPage = () => import('./pages/progress/progress-page.component').then((m) => m.ProgressPageComponent);
+const codingPage = () => import('./pages/dsa/coding-questions-page.component').then((m) => m.CodingQuestionsPageComponent);
+const dsaNotesPage = () => import('./pages/dsa/dsa-notes-page.component').then((m) => m.DsaNotesPageComponent);
 
 /**
  * One topic's pages, e.g. /java. The topic is in the route data; its curriculum is resolved once for
- * all of them. Section pages come before /:lesson, which leaves the sections not ported yet
- * (lessonSlugMatch) to the not-found page. DSA's practice is its coding-question list (Phase 5).
+ * all of them (and DSA's coding questions). Section pages come before /:lesson, which leaves the
+ * sections not ported yet (lessonSlugMatch) to the not-found page. DSA's practice is its
+ * coding-question list (/dsa/problems), and it has interview notes instead of a notebook.
  */
 const topicRoute = (topic: TopicId): Route => ({
   path: topic,
@@ -61,6 +66,9 @@ const topicRoute = (topic: TopicId): Route => ({
             resolve: { page: cheatsheetResolver },
             loadComponent: cheatsheetPage,
           },
+          { path: 'problems', title: 'Coding questions · DSA', loadComponent: codingPage },
+          { path: 'problems/:practiceTopic', title: codingTopicTitleResolver, loadComponent: codingPage },
+          { path: 'notes', title: 'DSA interview notes', loadComponent: dsaNotesPage },
         ]
       : [
           { path: 'problems', title: libraryTitleResolver, loadComponent: libraryPage },
@@ -72,6 +80,12 @@ const topicRoute = (topic: TopicId): Route => ({
           },
         ]),
     ...(topic === 'hld' ? [{ path: 'estimator', title: 'Capacity estimator · HLD', loadComponent: estimatorPage }] : []),
+    {
+      path: 'progress',
+      title: `Your ${TOPICS.find((info) => info.id === topic)!.shortTitle} progress`,
+      resolve: topic === 'java' ? { questions: javaQuestionsResolver } : {},
+      loadComponent: progressPage,
+    },
     ...(hasSection(topic, 'notebook')
       ? [
           {

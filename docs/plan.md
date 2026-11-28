@@ -323,6 +323,30 @@ Split into three, each with its own review:
   - the progress pages, DSA's coding-question tracker and its notes page (5c);
   - Java's interview bank (Phase 6), where questions are flagged and rated.
 
+**Phase 5c (done 2026-11-28, in review): progress pages and DSA's practice.**
+- **`/:topic/progress`** (all four topics), ported from TheSWEguide's progress dashboard:
+  - beside the title, overall completion, hours left, and backup export and import;
+  - figure tiles: modules, lessons, quiz accuracy, the practice library, DSA's coding questions, LLD/HLD mock interviews, Java's interview questions, and the notebook's saved items and topics to revise;
+  - progress by stage and module, each module with the next lesson to read;
+  - lessons in progress, topics to revise and recently completed lessons.
+- **`/dsa/problems`** and **`/dsa/problems/:practiceTopic`**: DSA's 156 coding questions (TheSWEguide's ProblemList).
+  - Each question links to LeetCode and has a status (not started, attempted, solved), a revisit flag and notes.
+  - Filters: search, topic, difficulty, status, flagged, with notes.
+  - The list is grouped by practice topic, each with the lesson that teaches it.
+  - Search results' `#lc-…` links scroll to the question. An unknown topic shows the not-found page.
+- **`/dsa/notes`**: DSA's interview notes.
+  - Your own notes, filed by practice topic, plus every note written on a coding question, with its difficulty, status and LeetCode link.
+  - Search, topic filter, an editor, and backups.
+- **Shared parts:**
+  - `NoteAutosave` (`notebook/note-autosave.ts`) saves the notes boxes of lessons, problems and coding questions. A re-saved note keeps its kind; TheSWEguide dropped it.
+  - The icons moved to `ui/icons.ts`; `ui/stat-parts.ts` has the progress bar and figure tile.
+  - `lib/dsa/practice.ts` has the app's own copies of `problemRef`, `leetCodeUrl` and the difficulties. Importing `content/dsa/problems.ts` would bundle its whole question list, which the app reads from `practice.json`. A test checks that the copies agree, since `problemRef` is the storage key.
+- **Tests:**
+  - the DSA helpers;
+  - a coding question's row (status, flag, note), and the dashboard's figures;
+  - e2e: a question's status, flag and note reaching the notes page and the account, and the progress page counting a completed lesson.
+- **Next: Phase 6.** It adds the Mock Interview tab and Java's interview bank, then removes Dashboard and Roadmaps.
+
 ## Phase 6: Mock Interview tab, and removing Dashboard and Roadmaps
 Split into three:
 - **6a:** the Mock Interview tab.

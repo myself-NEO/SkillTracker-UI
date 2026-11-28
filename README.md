@@ -101,6 +101,9 @@ decides where Google sign-in may return.
   pages (bookmarks, the "difficult" and "revisit" flags, "My notes"), and `pages/notebook` the
   notebook page (`/java/notebook`), with backup export and import. Backups use TheSWEguide's format
   (`src/lib/progress/backup.ts`), so its backups import here.
+- `pages/progress`: each topic's progress dashboard (`/java/progress`). `pages/dsa`: DSA's coding
+  questions (`/dsa/problems`, status, revisit flag and notes per LeetCode question; helpers in
+  `src/lib/dsa`) and its interview notes (`/dsa/notes`), which DSA has instead of a notebook.
 - `src/app/core`: the theme, the learner's progress, checklist ticks and notebook, the generated
   content files and their route resolvers, scrolling and page titles. Progress, ticks and the
   notebook are kept in this browser per account (`user-storage.ts`) and saved to the account in the

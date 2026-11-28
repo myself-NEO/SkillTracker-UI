@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { clearProgress, serverProgress, signInWithToken, testAccountToken } from './backend';
+import { clearProgress, serverProgress, setProgress, signInWithToken, testAccountToken } from './backend';
 
 // Reading: lessons, practice problems, cheat sheets and search. Signed in with the project's test
 // account's token (see backend.ts), so these need the local backend running too.
@@ -131,8 +131,18 @@ test.describe('reading (needs the local backend)', () => {
     await expect(explainer.locator('figcaption')).toContainText('4 / 6');
   });
 
-  test('pages not ported yet say so', async ({ page }) => {
+  test("a topic's progress page counts completed lessons", async ({ page }) => {
+    await setProgress(token, { lessons: { 'java:annotations': Date.now() } });
     await page.goto('/java/progress');
+    await expect(page.getByRole('heading', { level: 1, name: 'Your Java progress' })).toBeVisible();
+    const recent = page.locator('aside section').filter({ has: page.getByRole('heading', { name: 'Recently completed' }) });
+    await expect(recent.getByRole('link', { name: 'Annotations & Annotation Processing' })).toBeVisible();
+    await expect(page.locator('app-stat-tile').filter({ hasText: 'Interview questions practised' })).toContainText('/ 161');
+    await clearProgress(token, { lessons: { 'java:annotations': null } });
+  });
+
+  test('pages not ported yet say so', async ({ page }) => {
+    await page.goto('/java/interview');
     await expect(page.getByRole('heading', { level: 1, name: 'This page is on its way' })).toBeVisible();
     await page.goto('/java/no-such-lesson');
     await expect(page.getByRole('heading', { level: 1, name: 'This page doesn’t exist' })).toBeVisible();
