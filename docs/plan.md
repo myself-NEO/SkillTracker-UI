@@ -391,7 +391,7 @@ Split into three:
   - a question's practice (draft, hints, answer, rating, bookmark);
   - e2e: practising a question from a `#q-…` link, a miss reaching the notebook's revision list, and the account.
 
-**Phase 6a.2 (done 2026-11-28, in review): the timed LLD and HLD mock interviews.**
+**Phase 6a.2 (done and committed 2026-11-28): the timed LLD and HLD mock interviews.**
 - **Content build:**
   - Each written LLD and HLD problem's breakdown is parsed into its interview script (`content/hld/interview.ts`, `content/lld/interview.ts`) and written as `public/content/<lld|hld>/interview/<slug>.json`.
   - The script's Markdown is left for the browser to render as the learner opens each part, as TheSWEguide did. Only the checklist is rendered, for the checklist widget.
@@ -420,6 +420,28 @@ Split into three:
   - the kits and helpers, and every written problem's script: complete, and each question answers itself;
   - the simulator: the brief, questions, the clock and its pause, drafts, finishing;
   - e2e: an HLD interview from the list to the attempts, kept across a reload and with the account.
+
+**Phase 6a.3 (done 2026-11-28, in review): the Mock Interview tab and `/api/interviews`.**
+- **Backend (SkillTracker-Srcv):**
+  - `GET /api/interviews` lists the learner's mock interviews with other people, soonest first (by date, then time).
+  - `POST /api/interviews` books one (201).
+  - `PUT /api/interviews/{id}/feedback` scores one 1–5 with notes, which completes it.
+  - Each answers with the whole list.
+  - Bookings are checked: the kind is one of the scheduler's four, the time is like `14:30`, the interviewer’s name is at most 120 characters, and notes and feedback at most 2,000. Overlong text used to fail as a database error (500).
+  - Another learner's interview is a 404.
+  - Bookings and scores are limited to 30 per 10 minutes per user.
+  - `InterviewService` holds the logic; the old `/api/dashboard/interview*` routes stay for the old UI until launch (6c deletes them with the dashboard).
+  - Tests: listing order, booking, scoring, each learner's own interviews only, the checks, signed-out requests. 64 backend tests pass, including PostgreSQL 18.
+- **`/mock-interview`:**
+  - **On your own:** cards for Java's interview questions (with the bank's progress), and LLD's and HLD's mock interviews (problems interviewed, attempts, best score, in progress).
+  - Under the cards, the interviews left unfinished ("Pick up where you left off"), with their phase and time.
+  - **With a person:** the scheduler, now on `/api/interviews` rather than the dashboard's routes.
+  - A resolver reads the bank's index and LLD's and HLD's curricula, all static files, so the cards don't wait for the backend.
+- **Deploy order:** the backend's `dev` must reach `main` (Render) before the UI's. The live backend answers 500 for `/api/interviews` until then, and the scheduler says it couldn't load. The same holds for `/api/state` (Phase 5a).
+- **Tests:**
+  - the practice cards' figures and the unfinished interviews;
+  - the scheduler's calls;
+  - e2e: the tab's links, and booking and scoring a session against the local backend.
 
 ## Phase 7: hosting and launch
 - **Vercel:** use the UI's Vercel project, or create one if it isn't on Vercel yet. Framework preset Angular, build `npm run build`, output `dist/browser`, production branch `main`.

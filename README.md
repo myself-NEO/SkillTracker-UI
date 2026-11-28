@@ -110,6 +110,10 @@ decides where Google sign-in may return.
   the rubric. Attempts are kept with the account. The content build parses each written problem's
   breakdown into `public/content/<lld|hld>/interview/<slug>.json`; the kits (phases, budgets,
   guidance, rubric, keyword matching) are in `src/lib/interview/mock.ts`.
+- `pages/mock-interview`: the Mock Interview tab (`/mock-interview`). It links to the practice above,
+  with how far the learner has got and the interviews they left unfinished, and holds the scheduler
+  for sessions with a person (book one, then score it 1–5 with notes; `GET`/`POST /api/interviews`,
+  `PUT /api/interviews/{id}/feedback`).
 - `pages/progress`: each topic's progress dashboard (`/java/progress`). `pages/dsa`: DSA's coding
   questions (`/dsa/problems`, status, revisit flag and notes per LeetCode question; helpers in
   `src/lib/dsa`) and its interview notes (`/dsa/notes`), which DSA has instead of a notebook.

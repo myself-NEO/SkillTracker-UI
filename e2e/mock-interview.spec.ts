@@ -76,4 +76,34 @@ test.describe('mock interviews (needs the local backend)', () => {
     await page.goto('/hld/interview/no-such-problem');
     await expect(page.getByRole('heading', { level: 1, name: 'This page doesn’t exist' })).toBeVisible();
   });
+
+  test('the Mock Interview tab leads to the practice, and books and scores a session with a person', async ({ page }) => {
+    await page.goto('/mock-interview');
+    const practice = page.getByRole('region', { name: 'On your own' });
+    await expect(practice.getByRole('link', { name: 'Interview questions' })).toHaveAttribute('href', '/java/interview');
+    await expect(practice.getByRole('link', { name: 'Low-level design interviews' })).toHaveAttribute('href', '/lld/interview');
+    await expect(practice.getByRole('link', { name: 'System design interviews' })).toHaveAttribute('href', '/hld/interview');
+
+    // The account keeps every session it books, so this one has a name of its own.
+    const interviewer = `E2E interviewer ${Date.now()}`;
+    await page.getByLabel('Kind').selectOption({ label: 'Behavioral' });
+    await page.getByLabel('Date').fill('2026-12-10');
+    await page.getByLabel('Time').fill('18:00');
+    await page.getByLabel('Interviewer').fill(interviewer);
+    await page.getByRole('button', { name: 'Book interview' }).click();
+
+    const upcoming = page.getByRole('region', { name: 'Upcoming' }).getByRole('listitem').filter({ hasText: interviewer });
+    await expect(upcoming).toContainText('Behavioral');
+    await upcoming.getByRole('button', { name: 'Record feedback' }).click();
+    const dialog = page.getByRole('dialog', { name: 'How did it go?' });
+    await dialog.getByTitle('3 out of 5').click();
+    await expect(dialog.getByRole('radio', { name: '3 out of 5' })).toBeChecked();
+    await dialog.getByLabel('What went well, and what to work on').fill('Clear stories; quantify the impact.');
+    await dialog.getByRole('button', { name: 'Save feedback' }).click();
+    await expect(dialog).toBeHidden();
+
+    const scored = page.getByRole('region', { name: 'History' }).getByRole('listitem').filter({ hasText: interviewer });
+    await expect(scored.getByRole('img', { name: 'Score 3 out of 5' })).toBeVisible();
+    await expect(scored).toContainText('Clear stories; quantify the impact.');
+  });
 });

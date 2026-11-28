@@ -15,32 +15,30 @@ export interface BookingRequest {
   notes?: string;
 }
 
+interface InterviewList {
+  interviews?: MockInterview[];
+}
+
 /**
- * The learner's scheduled and past mock interviews, kept on the server. Until the interview
- * endpoints get their own path (/api/interviews, docs/plan.md Phase 6), they live under the old
- * dashboard's; each call answers with the whole updated list.
+ * The learner's scheduled and past mock interviews, kept on the server (`/api/interviews`). Each
+ * call answers with the whole list, soonest first.
  */
 @Injectable({ providedIn: 'root' })
 export class InterviewService {
   private readonly http = inject(HttpClient);
 
   async list(): Promise<MockInterview[]> {
-    const response = await firstValueFrom(this.http.get<{ interviews?: MockInterview[] }>('/api/dashboard'));
-    return response.interviews ?? [];
+    return (await firstValueFrom(this.http.get<InterviewList>('/api/interviews'))).interviews ?? [];
   }
 
   async book(request: BookingRequest): Promise<MockInterview[]> {
-    const response = await firstValueFrom(
-      this.http.post<{ interviews: MockInterview[] }>('/api/dashboard/interview', request),
-    );
-    return response.interviews;
+    return (await firstValueFrom(this.http.post<InterviewList>('/api/interviews', request))).interviews ?? [];
   }
 
+  /** Scores an interview 1–5 with notes, which completes it. */
   async saveFeedback(interviewId: string, score: number, feedback: string): Promise<MockInterview[]> {
-    const response = await firstValueFrom(
-      this.http.post<{ interviews: MockInterview[] }>('/api/dashboard/interview/feedback', { interviewId, score, feedback }),
-    );
-    return response.interviews;
+    const path = `/api/interviews/${encodeURIComponent(interviewId)}/feedback`;
+    return (await firstValueFrom(this.http.put<InterviewList>(path, { score, feedback }))).interviews ?? [];
   }
 }
 

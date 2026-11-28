@@ -48,6 +48,25 @@ export const javaQuestionsResolver: ResolveFn<JavaQuestionIndex> = () =>
     .javaQuestions()
     .catch(() => ({}));
 
+export interface MockHubData {
+  /** The Java question bank's titles by id; empty when it couldn't be read. */
+  questions: JavaQuestionIndex;
+  /** LLD's and HLD's curricula, for their mock interviews; null when one couldn't be read. */
+  lld: TrackFile | null;
+  hld: TrackFile | null;
+}
+
+/** /mock-interview: what the practice cards count. A file that can't be read leaves its card without figures. */
+export const mockHubResolver: ResolveFn<MockHubData> = async () => {
+  const content = inject(ContentService);
+  const [questions, lld, hld] = await Promise.all([
+    content.javaQuestions().catch(() => ({})),
+    content.track('lld').catch(() => null),
+    content.track('hld').catch(() => null),
+  ]);
+  return { questions, lld, hld };
+};
+
 export const visualizeResolver: ResolveFn<VisualizeIndex | null> = () =>
   inject(ContentService)
     .visualize()

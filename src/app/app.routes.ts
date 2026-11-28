@@ -17,6 +17,7 @@ import {
   lessonSlugMatch,
   lessonTitleResolver,
   libraryTitleResolver,
+  mockHubResolver,
   mockInterviewResolver,
   mockInterviewTitleResolver,
   problemResolver,
@@ -186,6 +187,7 @@ export const routes: Routes = [
       {
         path: 'mock-interview',
         title: 'Mock interviews',
+        resolve: { hub: mockHubResolver },
         loadComponent: () =>
           import('./pages/mock-interview/mock-interview-page.component').then((m) => m.MockInterviewPageComponent),
       },
